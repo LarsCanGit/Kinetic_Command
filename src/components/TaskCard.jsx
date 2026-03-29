@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -29,6 +29,8 @@ export function TaskCardOverlay({ task }) {
 }
 
 export default function TaskCard({ task, onEdit, onDelete }) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
   const {
     attributes,
     listeners,
@@ -54,6 +56,7 @@ export default function TaskCard({ task, onEdit, onDelete }) {
       style={style}
       {...attributes}
       onClick={() => onEdit(task)}
+      onMouseLeave={() => setConfirmDelete(false)}
       className="bg-surface-container-low p-5 group hover:bg-surface-container-high transition-colors border-b border-outline-variant/10 cursor-pointer select-none relative"
     >
       {/* Header row */}
@@ -71,15 +74,39 @@ export default function TaskCard({ task, onEdit, onDelete }) {
         </span>
 
         <div className="flex items-center gap-1">
-          {/* Delete button — visible on hover */}
-          <button
-            onPointerDown={e => e.stopPropagation()}
-            onClick={e => { e.stopPropagation(); onDelete(task.id) }}
-            className="text-on-surface-variant/0 group-hover:text-on-surface-variant/40 hover:!text-error transition-colors"
-            data-testid={`task-delete-btn-${task.id}`}
-          >
-            <span className="material-symbols-outlined text-sm">delete</span>
-          </button>
+          {/* Delete — idle or confirming */}
+          {confirmDelete ? (
+            <div
+              className="flex items-center gap-1"
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
+            >
+              <span className="text-[10px] font-label text-error uppercase tracking-wider">Delete?</span>
+              <button
+                onClick={e => { e.stopPropagation(); onDelete(task.id) }}
+                className="text-error hover:text-error transition-colors"
+                data-testid={`task-delete-confirm-btn-${task.id}`}
+              >
+                <span className="material-symbols-outlined text-sm">check</span>
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setConfirmDelete(false) }}
+                className="text-on-surface-variant hover:text-on-surface transition-colors"
+                data-testid={`task-delete-cancel-btn-${task.id}`}
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); setConfirmDelete(true) }}
+              className="text-on-surface-variant/0 group-hover:text-on-surface-variant/40 hover:!text-error transition-colors"
+              data-testid={`task-delete-btn-${task.id}`}
+            >
+              <span className="material-symbols-outlined text-sm">delete</span>
+            </button>
+          )}
 
           {/* Drag handle */}
           <span
