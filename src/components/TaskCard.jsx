@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -29,9 +29,6 @@ export function TaskCardOverlay({ task }) {
 }
 
 export default function TaskCard({ task, onEdit, onDelete }) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef(null)
-
   const {
     attributes,
     listeners,
@@ -48,16 +45,6 @@ export default function TaskCard({ task, onEdit, onDelete }) {
     zIndex: isDragging ? 0 : undefined,
   }
 
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuOpen(false)
-      }
-    }
-    if (menuOpen) document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [menuOpen])
-
   const overdue = isOverdue(task.dueDate)
   const formattedDate = formatDueDate(task.dueDate)
 
@@ -65,9 +52,9 @@ export default function TaskCard({ task, onEdit, onDelete }) {
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-surface-container-low p-5 group hover:bg-surface-container-high transition-colors border-b border-outline-variant/10 cursor-grab active:cursor-grabbing select-none relative"
       {...attributes}
-      {...listeners}
+      onClick={() => onEdit(task)}
+      className="bg-surface-container-low p-5 group hover:bg-surface-container-high transition-colors border-b border-outline-variant/10 cursor-pointer select-none relative"
     >
       {/* Header row */}
       <div className="flex justify-between items-start mb-4">
@@ -83,39 +70,25 @@ export default function TaskCard({ task, onEdit, onDelete }) {
           {task.status === 'done' && 'Completed'}
         </span>
 
-        {/* Context menu */}
-        <div
-          ref={menuRef}
-          className="relative"
-          onPointerDown={e => e.stopPropagation()}
-        >
+        <div className="flex items-center gap-1">
+          {/* Delete button — visible on hover */}
           <button
-            onClick={() => setMenuOpen(v => !v)}
-            className="text-on-surface-variant hover:text-primary transition-colors"
-            data-testid={`task-menu-btn-${task.id}`}
+            onPointerDown={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); onDelete(task.id) }}
+            className="text-on-surface-variant/0 group-hover:text-on-surface-variant/40 hover:!text-error transition-colors"
+            data-testid={`task-delete-btn-${task.id}`}
           >
-            <span className="material-symbols-outlined text-sm">more_horiz</span>
+            <span className="material-symbols-outlined text-sm">delete</span>
           </button>
-          {menuOpen && (
-            <div className="absolute right-0 top-6 bg-surface-container-highest border border-outline-variant/20 shadow-xl z-50 min-w-[120px]">
-              <button
-                onClick={() => { setMenuOpen(false); onEdit(task) }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-on-surface hover:bg-surface-container-high transition-colors"
-                data-testid={`task-edit-btn-${task.id}`}
-              >
-                <span className="material-symbols-outlined text-sm">edit</span>
-                Edit
-              </button>
-              <button
-                onClick={() => { setMenuOpen(false); onDelete(task.id) }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-error hover:bg-error-container/20 transition-colors"
-                data-testid={`task-delete-btn-${task.id}`}
-              >
-                <span className="material-symbols-outlined text-sm">delete</span>
-                Delete
-              </button>
-            </div>
-          )}
+
+          {/* Drag handle */}
+          <span
+            {...listeners}
+            onClick={e => e.stopPropagation()}
+            className="text-on-surface-variant/0 group-hover:text-on-surface-variant/40 hover:!text-primary transition-colors cursor-grab active:cursor-grabbing"
+          >
+            <span className="material-symbols-outlined text-sm">drag_indicator</span>
+          </span>
         </div>
       </div>
 
