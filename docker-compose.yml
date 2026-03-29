@@ -1,0 +1,16 @@
+services:
+  kanban:
+    build: .
+    container_name: kinetic-command
+    ports:
+      - "7429:7429"
+    volumes:
+      - kanban-data:/data
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATA_PATH=/data
+
+volumes:
+  kanban-data:
+    driver: local

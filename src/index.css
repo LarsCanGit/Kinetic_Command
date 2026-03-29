@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Focus-visible ring for keyboard navigation (WCAG) */
+*:focus-visible {
+  outline: 2px solid #69daff;
+  outline-offset: 2px;
+}
+
+body {
+  background-color: #001019;
+  background-image: radial-gradient(#1d4d63 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1d4d63;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4f7b93;
+}
