@@ -7,6 +7,8 @@ test-data/
 *.log
 .DS_Store
 .env
+.env.local
+.env.*.local
 
 # Docs (README.md is kept; all other markdown excluded)
 *.md
