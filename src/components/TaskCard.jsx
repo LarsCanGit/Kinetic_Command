@@ -15,6 +15,12 @@ function isOverdue(dateStr) {
   return new Date(dateStr + 'T00:00:00') < today
 }
 
+const PRIORITY_STYLES = {
+  p0: 'text-error',
+  p1: 'text-primary',
+  p2: 'text-on-surface-variant',
+}
+
 export function TaskCardOverlay({ task }) {
   return (
     <div className="bg-surface-container-high p-5 border-b-2 border-primary shadow-2xl shadow-primary/10 opacity-95 rotate-1 cursor-grabbing w-full">
@@ -49,6 +55,8 @@ export default function TaskCard({ task, onEdit, onDelete }) {
 
   const overdue = isOverdue(task.dueDate)
   const formattedDate = formatDueDate(task.dueDate)
+  const hasPriority = task.priority && task.priority !== 'none'
+  const hasTags = task.tags?.length > 0
 
   return (
     <div
@@ -61,17 +69,25 @@ export default function TaskCard({ task, onEdit, onDelete }) {
     >
       {/* Header row */}
       <div className="flex justify-between items-start mb-4">
-        <span className={`text-[10px] font-label uppercase tracking-widest font-bold ${
-          task.status === 'in_progress'
-            ? 'text-primary'
-            : task.status === 'done'
-            ? 'text-tertiary'
-            : 'text-on-surface-variant'
-        }`}>
-          {task.status === 'todo' && 'Backlog'}
-          {task.status === 'in_progress' && 'In Progress'}
-          {task.status === 'done' && 'Completed'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`text-[10px] font-label uppercase tracking-widest font-bold ${
+            task.status === 'in_progress'
+              ? 'text-primary'
+              : task.status === 'done'
+              ? 'text-tertiary'
+              : 'text-on-surface-variant'
+          }`}>
+            {task.status === 'todo' && 'Backlog'}
+            {task.status === 'in_progress' && 'In Progress'}
+            {task.status === 'done' && 'Completed'}
+          </span>
+
+          {hasPriority && (
+            <span className={`text-[10px] font-label uppercase tracking-widest font-bold ${PRIORITY_STYLES[task.priority]}`}>
+              · {task.priority.toUpperCase()}
+            </span>
+          )}
+        </div>
 
         <div className="flex items-center gap-1">
           {/* Delete — idle or confirming */}
@@ -143,6 +159,20 @@ export default function TaskCard({ task, onEdit, onDelete }) {
           <span className="material-symbols-outlined text-xs">calendar_today</span>
           {overdue && task.status !== 'done' ? 'Overdue · ' : 'Due: '}
           {formattedDate}
+        </div>
+      )}
+
+      {/* Tags */}
+      {hasTags && (
+        <div className="flex flex-wrap gap-1">
+          {task.tags.map(tag => (
+            <span
+              key={tag}
+              className="px-1.5 py-0.5 bg-surface-container text-on-surface-variant text-[10px] font-label"
+            >
+              {tag}
+            </span>
+          ))}
         </div>
       )}
     </div>

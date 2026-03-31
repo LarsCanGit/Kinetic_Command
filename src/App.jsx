@@ -17,6 +17,7 @@ export default function App() {
   const [cardModal, setCardModal] = useState({ open: false, lane: 'todo', task: null })
   const [projectModalOpen, setProjectModalOpen] = useState(false)
   const [toasts, setToasts] = useState([])
+  const [sidebarOpen, setSidebarOpen] = useState(() => localStorage.getItem('sidebarOpen') !== 'false')
 
   const tasksRef = useRef(tasks)
   useEffect(() => { tasksRef.current = tasks }, [tasks])
@@ -104,7 +105,7 @@ export default function App() {
 
   // ── Task operations ─────────────────────────────────────────────────────────
 
-  const createTask = useCallback(async (title, description, dueDate, status = 'todo') => {
+  const createTask = useCallback(async (title, description, dueDate, status = 'todo', tags = [], priority = 'none') => {
     try {
       const task = await db.addTask({
         projectId: currentProjectId,
@@ -112,6 +113,8 @@ export default function App() {
         description: description || '',
         dueDate: dueDate || null,
         status,
+        tags,
+        priority,
       })
       setTasks(prev => [...prev, task])
       addToast('Task created')
@@ -224,9 +227,12 @@ export default function App() {
       <SideNav
         currentProject={currentProject}
         onNewTask={() => openNewCard('todo')}
+        open={sidebarOpen}
+        onClose={() => { setSidebarOpen(false); localStorage.setItem('sidebarOpen', 'false') }}
+        onOpen={() => { setSidebarOpen(true); localStorage.setItem('sidebarOpen', 'true') }}
       />
 
-      <main className="ml-64 mt-16 p-8 min-h-[calc(100vh-4rem)] overflow-y-auto h-[calc(100vh-4rem)]">
+      <main className={`${sidebarOpen ? 'ml-64' : 'ml-10'} mt-16 p-8 min-h-[calc(100vh-4rem)] overflow-y-auto h-[calc(100vh-4rem)]`}>
         <Board
           tasks={tasks}
           currentProject={currentProject}
@@ -258,7 +264,7 @@ export default function App() {
           task={cardModal.task}
           onSave={cardModal.task
             ? (id, updates) => updateTask(id, updates)
-            : (title, desc, dueDate, status) => createTask(title, desc, dueDate, status)
+            : (title, desc, dueDate, status, tags, priority) => createTask(title, desc, dueDate, status, tags, priority)
           }
           onClose={closeCardModal}
         />

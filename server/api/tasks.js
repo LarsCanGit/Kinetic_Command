@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
 // POST /api/tasks — create a task
 router.post('/', async (req, res) => {
   try {
-    const { projectId, title, description, dueDate, status } = req.body
+    const { projectId, title, description, dueDate, status, tags, priority } = req.body
     if (!projectId) return res.status(400).json({ error: 'projectId is required' })
     if (!title || !title.trim()) return res.status(400).json({ error: 'title is required' })
 
@@ -43,6 +43,8 @@ router.post('/', async (req, res) => {
       dueDate: dueDate || null,
       status: taskStatus,
       order: maxOrder + 1,
+      tags: Array.isArray(tags) ? tags : [],
+      priority: priority || 'none',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
@@ -64,7 +66,7 @@ router.put('/:id', async (req, res) => {
     if (index === -1) return res.status(404).json({ error: 'Task not found' })
 
     const existing = allTasks[index]
-    const { title, description, dueDate, status, order } = req.body
+    const { title, description, dueDate, status, order, tags, priority } = req.body
     if (status !== undefined && !VALID_STATUSES.includes(status)) {
       return res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` })
     }
@@ -75,6 +77,8 @@ router.put('/:id', async (req, res) => {
       ...(dueDate !== undefined && { dueDate: dueDate || null }),
       ...(status !== undefined && { status }),
       ...(order !== undefined && { order }),
+      ...(tags !== undefined && { tags: Array.isArray(tags) ? tags : [] }),
+      ...(priority !== undefined && { priority }),
       updated_at: new Date().toISOString(),
     }
     allTasks[index] = updated
