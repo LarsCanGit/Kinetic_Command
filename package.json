@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "start": "node server/server.js",
     "server": "node server/server.js",
+    "server:dev": "node --env-file=.env.development server/server.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },

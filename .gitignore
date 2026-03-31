@@ -7,10 +7,13 @@ test-data/
 *.log
 .DS_Store
 .env
+.env.local
+.env.*.local
 
-# Docs (README.md is kept; all other markdown excluded)
+# Docs (README.md and CLAUDE.md kept; all other markdown excluded)
 *.md
 !README.md
+!CLAUDE.md
 
 # Scrapped / research files
 code.html

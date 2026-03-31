@@ -135,7 +135,7 @@ export default function CardModal({ lane, task, onSave, onClose }) {
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Optional description..."
-              rows={3}
+              rows={8}
               className="w-full bg-surface-container-low border-b border-outline-variant/30 focus:border-primary text-on-surface text-sm px-3 py-2 focus:outline-none focus:bg-surface-container transition-all placeholder:text-on-surface-variant/40 resize-none"
             />
           </div>

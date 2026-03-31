@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -29,8 +29,7 @@ export function TaskCardOverlay({ task }) {
 }
 
 export default function TaskCard({ task, onEdit, onDelete }) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const {
     attributes,
@@ -48,16 +47,6 @@ export default function TaskCard({ task, onEdit, onDelete }) {
     zIndex: isDragging ? 0 : undefined,
   }
 
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuOpen(false)
-      }
-    }
-    if (menuOpen) document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [menuOpen])
-
   const overdue = isOverdue(task.dueDate)
   const formattedDate = formatDueDate(task.dueDate)
 
@@ -65,9 +54,10 @@ export default function TaskCard({ task, onEdit, onDelete }) {
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-surface-container-low p-5 group hover:bg-surface-container-high transition-colors border-b border-outline-variant/10 cursor-grab active:cursor-grabbing select-none relative"
       {...attributes}
-      {...listeners}
+      onClick={() => onEdit(task)}
+      onMouseLeave={() => setConfirmDelete(false)}
+      className="bg-surface-container-low p-5 group hover:bg-surface-container-high transition-colors border-b border-outline-variant/10 cursor-pointer select-none relative"
     >
       {/* Header row */}
       <div className="flex justify-between items-start mb-4">
@@ -83,39 +73,49 @@ export default function TaskCard({ task, onEdit, onDelete }) {
           {task.status === 'done' && 'Completed'}
         </span>
 
-        {/* Context menu */}
-        <div
-          ref={menuRef}
-          className="relative"
-          onPointerDown={e => e.stopPropagation()}
-        >
-          <button
-            onClick={() => setMenuOpen(v => !v)}
-            className="text-on-surface-variant hover:text-primary transition-colors"
-            data-testid={`task-menu-btn-${task.id}`}
-          >
-            <span className="material-symbols-outlined text-sm">more_horiz</span>
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 top-6 bg-surface-container-highest border border-outline-variant/20 shadow-xl z-50 min-w-[120px]">
+        <div className="flex items-center gap-1">
+          {/* Delete — idle or confirming */}
+          {confirmDelete ? (
+            <div
+              className="flex items-center gap-1"
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
+            >
+              <span className="text-[10px] font-label text-error uppercase tracking-wider">Delete?</span>
               <button
-                onClick={() => { setMenuOpen(false); onEdit(task) }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-on-surface hover:bg-surface-container-high transition-colors"
-                data-testid={`task-edit-btn-${task.id}`}
+                onClick={e => { e.stopPropagation(); onDelete(task.id) }}
+                className="text-error hover:text-error transition-colors"
+                data-testid={`task-delete-confirm-btn-${task.id}`}
               >
-                <span className="material-symbols-outlined text-sm">edit</span>
-                Edit
+                <span className="material-symbols-outlined text-sm">check</span>
               </button>
               <button
-                onClick={() => { setMenuOpen(false); onDelete(task.id) }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-error hover:bg-error-container/20 transition-colors"
-                data-testid={`task-delete-btn-${task.id}`}
+                onClick={e => { e.stopPropagation(); setConfirmDelete(false) }}
+                className="text-on-surface-variant hover:text-on-surface transition-colors"
+                data-testid={`task-delete-cancel-btn-${task.id}`}
               >
-                <span className="material-symbols-outlined text-sm">delete</span>
-                Delete
+                <span className="material-symbols-outlined text-sm">close</span>
               </button>
             </div>
+          ) : (
+            <button
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); setConfirmDelete(true) }}
+              className="text-on-surface-variant/0 group-hover:text-on-surface-variant/40 hover:!text-error transition-colors"
+              data-testid={`task-delete-btn-${task.id}`}
+            >
+              <span className="material-symbols-outlined text-sm">delete</span>
+            </button>
           )}
+
+          {/* Drag handle */}
+          <span
+            {...listeners}
+            onClick={e => e.stopPropagation()}
+            className="text-on-surface-variant/0 group-hover:text-on-surface-variant/40 hover:!text-primary transition-colors cursor-grab active:cursor-grabbing"
+          >
+            <span className="material-symbols-outlined text-sm">drag_indicator</span>
+          </span>
         </div>
       </div>
 

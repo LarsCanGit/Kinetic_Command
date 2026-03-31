@@ -156,31 +156,16 @@ export default function Board({
     <div>
       {/* Board header */}
       <header className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6 mb-12">
-        <div>
-          <nav className="flex items-center gap-2 mb-2 text-xs font-label uppercase tracking-widest text-on-surface-variant">
-            <span>Engineering</span>
-            <span className="material-symbols-outlined text-[10px]">chevron_right</span>
-            <span className="text-primary">Sprint Board</span>
-          </nav>
-          <div className="flex items-center gap-4 flex-wrap">
-            <h1 className="text-4xl font-headline font-bold tracking-tighter text-on-surface uppercase">
-              Kanban Engine
-            </h1>
-            <button
-              onClick={onOpenProjectModal}
-              className="bg-surface-container-high px-3 py-1.5 flex items-center gap-3 cursor-pointer group hover:bg-surface-container-highest transition-colors"
-              data-testid="project-selector-btn"
-            >
-              <span className="text-xs font-label text-on-surface-variant">PROJECT:</span>
-              <span className="text-sm font-bold text-primary font-headline tracking-tight">
-                {currentProject?.name ?? '—'}
-              </span>
-              <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">
-                unfold_more
-              </span>
-            </button>
-          </div>
-        </div>
+        <button
+          onClick={onOpenProjectModal}
+          className="bg-primary text-on-primary px-4 py-2 flex items-center gap-3 cursor-pointer group hover:brightness-110 transition-all text-lg font-bold"
+          data-testid="project-selector-btn"
+        >
+          <span className="font-headline tracking-tight">
+            {currentProject?.name ?? 'Select Project'}
+          </span>
+          <span className="material-symbols-outlined">unfold_more</span>
+        </button>
 
         <div className="flex items-center gap-3">
           <button
