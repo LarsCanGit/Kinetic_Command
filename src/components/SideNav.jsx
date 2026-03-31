@@ -8,28 +8,51 @@ const NAV_ITEMS = [
   { icon: 'bug_report', label: 'Issues', active: false },
 ]
 
-export default function SideNav({ currentProject, onNewTask }) {
+export default function SideNav({ currentProject, onNewTask, open, onClose, onOpen }) {
+  if (!open) {
+    return (
+      <aside className="bg-[#001620] flex flex-col items-center h-[calc(100vh-4rem)] fixed left-0 top-16 border-r border-[#1d4d63]/15 w-10 z-40">
+        <button
+          onClick={onOpen}
+          className="mt-3 text-on-surface-variant hover:text-primary transition-colors"
+          title="Open sidebar"
+        >
+          <span className="material-symbols-outlined text-lg">chevron_right</span>
+        </button>
+      </aside>
+    )
+  }
+
   return (
     <aside className="bg-[#001620] flex flex-col h-[calc(100vh-4rem)] fixed left-0 top-16 border-r border-[#1d4d63]/15 w-64 z-40">
       {/* Project badge */}
       <div className="p-6 border-b border-outline-variant/10">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-8 h-8 bg-surface-container-high flex items-center justify-center rounded-sm">
-            <span
-              className="material-symbols-outlined text-primary text-lg"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              deployed_code
-            </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-surface-container-high flex items-center justify-center rounded-sm">
+              <span
+                className="material-symbols-outlined text-primary text-lg"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                deployed_code
+              </span>
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-cyan-500 font-headline leading-tight truncate max-w-[120px]">
+                {currentProject?.name ?? '—'}
+              </h2>
+              <p className="text-[10px] font-label text-on-surface-variant tracking-widest uppercase">
+                Kanban Board
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-black text-cyan-500 font-headline leading-tight truncate max-w-[140px]">
-              {currentProject?.name ?? '—'}
-            </h2>
-            <p className="text-[10px] font-label text-on-surface-variant tracking-widest uppercase">
-              Kanban Board
-            </p>
-          </div>
+          <button
+            onClick={onClose}
+            className="text-on-surface-variant hover:text-primary transition-colors flex-shrink-0"
+            title="Close sidebar"
+          >
+            <span className="material-symbols-outlined text-lg">chevron_left</span>
+          </button>
         </div>
       </div>
 

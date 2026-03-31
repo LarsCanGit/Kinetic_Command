@@ -6,12 +6,22 @@ const LANE_OPTIONS = [
   { value: 'done', label: 'Done' },
 ]
 
+const PRIORITY_OPTIONS = [
+  { value: 'none', label: 'None' },
+  { value: 'p0', label: 'P0' },
+  { value: 'p1', label: 'P1' },
+  { value: 'p2', label: 'P2' },
+]
+
 export default function CardModal({ lane, task, onSave, onClose }) {
   const isEdit = !!task
   const [title, setTitle] = useState(task?.title ?? '')
   const [description, setDescription] = useState(task?.description ?? '')
   const [dueDate, setDueDate] = useState(task?.dueDate ?? '')
   const [selectedLane, setSelectedLane] = useState(lane)
+  const [priority, setPriority] = useState(task?.priority ?? 'none')
+  const [tags, setTags] = useState(task?.tags ?? [])
+  const [tagInput, setTagInput] = useState('')
   const [error, setError] = useState('')
   const titleRef = useRef(null)
   const handleSubmitRef = useRef(null)
@@ -38,6 +48,27 @@ export default function CardModal({ lane, task, onSave, onClose }) {
     return () => window.removeEventListener('keydown', handleKey)
   }, [onClose])
 
+  function addTag(raw) {
+    const tag = raw.trim().toLowerCase().replace(/,/g, '')
+    if (tag && !tags.includes(tag)) {
+      setTags(prev => [...prev, tag])
+    }
+    setTagInput('')
+  }
+
+  function handleTagKeyDown(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addTag(tagInput)
+    } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+      setTags(prev => prev.slice(0, -1))
+    }
+  }
+
+  function removeTag(tag) {
+    setTags(prev => prev.filter(t => t !== tag))
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
     if (!title.trim()) {
@@ -49,9 +80,11 @@ export default function CardModal({ lane, task, onSave, onClose }) {
         title: title.trim(),
         description: description.trim(),
         dueDate: dueDate || null,
+        priority,
+        tags,
       })
     } else {
-      onSave(title.trim(), description.trim(), dueDate || null, selectedLane)
+      onSave(title.trim(), description.trim(), dueDate || null, selectedLane, tags, priority)
     }
     onClose()
   }
@@ -150,6 +183,68 @@ export default function CardModal({ lane, task, onSave, onClose }) {
               value={dueDate}
               onChange={e => setDueDate(e.target.value)}
               className="w-full bg-surface-container-low border-b border-outline-variant/30 focus:border-primary text-on-surface text-sm px-3 py-2 focus:outline-none focus:bg-surface-container transition-all [color-scheme:dark]"
+            />
+          </div>
+
+          {/* Priority */}
+          <div>
+            <label className="block text-[10px] font-label uppercase tracking-widest text-on-surface-variant mb-2">
+              Priority
+            </label>
+            <div className="flex gap-2">
+              {PRIORITY_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setPriority(opt.value)}
+                  className={`px-3 py-1.5 text-xs font-label transition-colors ${
+                    priority === opt.value
+                      ? opt.value === 'p0'
+                        ? 'bg-error text-on-error font-bold'
+                        : opt.value === 'p1'
+                        ? 'bg-primary text-on-primary-fixed font-bold'
+                        : opt.value === 'p2'
+                        ? 'bg-surface-container-high text-on-surface font-bold'
+                        : 'bg-surface-container text-on-surface-variant font-bold'
+                      : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-[10px] font-label uppercase tracking-widest text-on-surface-variant mb-2">
+              Tags
+            </label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {tags.map(tag => (
+                <span
+                  key={tag}
+                  className="flex items-center gap-1 px-2 py-0.5 bg-surface-container text-on-surface-variant text-[10px] font-label"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="hover:text-error transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[10px]">close</span>
+                  </button>
+                </span>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={tagInput}
+              onChange={e => setTagInput(e.target.value)}
+              onKeyDown={handleTagKeyDown}
+              onBlur={() => tagInput.trim() && addTag(tagInput)}
+              placeholder="Add tag, press Enter..."
+              className="w-full bg-surface-container-low border-b border-outline-variant/30 focus:border-primary text-on-surface text-sm px-3 py-2 focus:outline-none focus:bg-surface-container transition-all placeholder:text-on-surface-variant/40"
             />
           </div>
 
