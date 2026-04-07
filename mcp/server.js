@@ -66,17 +66,27 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           description: { type: 'string', description: 'Task description' },
           status: {
             type: 'string',
-            enum: ['todo', 'in_progress', 'done'],
-            description: 'Initial status (default: todo)',
+            enum: ['backlog', 'todo', 'in_progress', 'done'],
+            description: 'Initial status (default: todo). Use backlog for ideas/future work not yet approved; todo for approved tasks ready to be worked on.',
           },
           dueDate: { type: 'string', description: 'Due date in ISO 8601 format' },
+          tags: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'List of tags to categorize the task',
+          },
+          priority: {
+            type: 'string',
+            enum: ['none', 'low', 'medium', 'high', 'critical'],
+            description: 'Task priority (default: none)',
+          },
         },
         required: ['projectId', 'title'],
       },
     },
     {
       name: 'update_task',
-      description: 'Update an existing task (title, description, status, dueDate)',
+      description: 'Update an existing task (title, description, status, dueDate, tags, priority)',
       inputSchema: {
         type: 'object',
         properties: {
@@ -85,10 +95,20 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           description: { type: 'string', description: 'New description' },
           status: {
             type: 'string',
-            enum: ['todo', 'in_progress', 'done'],
-            description: 'New status',
+            enum: ['backlog', 'todo', 'in_progress', 'done'],
+            description: 'New status. Use backlog for ideas/future work not yet approved; todo for approved tasks ready to be worked on.',
           },
           dueDate: { type: 'string', description: 'New due date in ISO 8601 format' },
+          tags: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'List of tags to categorize the task',
+          },
+          priority: {
+            type: 'string',
+            enum: ['none', 'low', 'medium', 'high', 'critical'],
+            description: 'Task priority',
+          },
         },
         required: ['id'],
       },

@@ -4,6 +4,11 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import TaskCard from './TaskCard'
 
 const LANE_META = {
+  backlog: {
+    label: 'Backlog',
+    dotClass: 'bg-secondary',
+    countClass: 'bg-secondary/10 text-secondary',
+  },
   todo: {
     label: 'To Do',
     dotClass: 'bg-on-surface-variant',

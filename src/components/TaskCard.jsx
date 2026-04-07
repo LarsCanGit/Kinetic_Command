@@ -15,10 +15,14 @@ function isOverdue(dateStr) {
   return new Date(dateStr + 'T00:00:00') < today
 }
 
+// Normalize legacy p0/p1/p2 values to the current scale
+const PRIORITY_NORMALIZE = { p0: 'critical', p1: 'high', p2: 'medium' }
+
 const PRIORITY_STYLES = {
-  p0: 'text-error',
-  p1: 'text-primary',
-  p2: 'text-on-surface-variant',
+  critical: 'text-error',
+  high: 'text-primary',
+  medium: 'text-secondary',
+  low: 'text-on-surface-variant',
 }
 
 export function TaskCardOverlay({ task }) {
@@ -55,7 +59,8 @@ export default function TaskCard({ task, onEdit, onDelete }) {
 
   const overdue = isOverdue(task.dueDate)
   const formattedDate = formatDueDate(task.dueDate)
-  const hasPriority = task.priority && task.priority !== 'none'
+  const priority = PRIORITY_NORMALIZE[task.priority] || task.priority
+  const hasPriority = priority && priority !== 'none'
   const hasTags = task.tags?.length > 0
 
   return (
@@ -75,16 +80,19 @@ export default function TaskCard({ task, onEdit, onDelete }) {
               ? 'text-primary'
               : task.status === 'done'
               ? 'text-tertiary'
+              : task.status === 'backlog'
+              ? 'text-secondary'
               : 'text-on-surface-variant'
           }`}>
-            {task.status === 'todo' && 'Backlog'}
+            {task.status === 'backlog' && 'Backlog'}
+            {task.status === 'todo' && 'To Do'}
             {task.status === 'in_progress' && 'In Progress'}
             {task.status === 'done' && 'Completed'}
           </span>
 
           {hasPriority && (
-            <span className={`text-[10px] font-label uppercase tracking-widest font-bold ${PRIORITY_STYLES[task.priority]}`}>
-              · {task.priority.toUpperCase()}
+            <span className={`text-[10px] font-label uppercase tracking-widest font-bold ${PRIORITY_STYLES[priority]}`}>
+              · {priority.toUpperCase()}
             </span>
           )}
         </div>

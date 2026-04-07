@@ -5,7 +5,7 @@ import { getTasks, saveTasks } from '../fileStorage.js'
 const router = Router()
 
 // Canonical lane statuses — keep in sync with frontend (Board.jsx, Lane.jsx, CardModal.jsx)
-const VALID_STATUSES = ['todo', 'in_progress', 'done']
+const VALID_STATUSES = ['backlog', 'todo', 'in_progress', 'done']
 
 // GET /api/tasks?projectId= — get tasks for a project
 router.get('/', async (req, res) => {
