@@ -11,7 +11,7 @@ import { arrayMove } from '@dnd-kit/sortable'
 import Lane from './Lane'
 import { TaskCardOverlay } from './TaskCard'
 
-const LANE_IDS = ['todo', 'in_progress', 'done']
+const LANE_IDS = ['backlog', 'todo', 'in_progress', 'done']
 
 function buildItems(tasks) {
   return LANE_IDS.reduce((acc, id) => {
@@ -191,7 +191,7 @@ export default function Board({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
           {LANE_IDS.map(laneId => (
             <Lane
               key={laneId}

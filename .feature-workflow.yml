@@ -1,0 +1,13 @@
+# .feature-workflow.yml
+
+# Kanban project ID (find this by listing projects in the kanban MCP)
+kanban_project_id: "07b72523-6290-45e9-ada1-fb7500d9ad30"
+
+# Branch to create feature branches from
+integration_branch: "develop"
+
+# Prefix for new branches (result: prefix/task-slug)
+branch_prefix: "feat"
+
+# Command to run for audit/lint/test verification
+audit_command: "vibeaudit"

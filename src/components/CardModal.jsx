@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react'
 
 const LANE_OPTIONS = [
+  { value: 'backlog', label: 'Backlog' },
   { value: 'todo', label: 'To Do' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'done', label: 'Done' },
 ]
 
+// Normalize legacy p0/p1/p2 values to the current scale
+const PRIORITY_NORMALIZE = { p0: 'critical', p1: 'high', p2: 'medium' }
+
 const PRIORITY_OPTIONS = [
   { value: 'none', label: 'None' },
-  { value: 'p0', label: 'P0' },
-  { value: 'p1', label: 'P1' },
-  { value: 'p2', label: 'P2' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
 ]
 
 export default function CardModal({ lane, task, onSave, onClose }) {
@@ -19,7 +24,7 @@ export default function CardModal({ lane, task, onSave, onClose }) {
   const [description, setDescription] = useState(task?.description ?? '')
   const [dueDate, setDueDate] = useState(task?.dueDate ?? '')
   const [selectedLane, setSelectedLane] = useState(lane)
-  const [priority, setPriority] = useState(task?.priority ?? 'none')
+  const [priority, setPriority] = useState(PRIORITY_NORMALIZE[task?.priority] ?? task?.priority ?? 'none')
   const [tags, setTags] = useState(task?.tags ?? [])
   const [tagInput, setTagInput] = useState('')
   const [error, setError] = useState('')
@@ -199,11 +204,13 @@ export default function CardModal({ lane, task, onSave, onClose }) {
                   onClick={() => setPriority(opt.value)}
                   className={`px-3 py-1.5 text-xs font-label transition-colors ${
                     priority === opt.value
-                      ? opt.value === 'p0'
+                      ? opt.value === 'critical'
                         ? 'bg-error text-on-error font-bold'
-                        : opt.value === 'p1'
+                        : opt.value === 'high'
                         ? 'bg-primary text-on-primary-fixed font-bold'
-                        : opt.value === 'p2'
+                        : opt.value === 'medium'
+                        ? 'bg-secondary text-on-secondary font-bold'
+                        : opt.value === 'low'
                         ? 'bg-surface-container-high text-on-surface font-bold'
                         : 'bg-surface-container text-on-surface-variant font-bold'
                       : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
