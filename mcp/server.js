@@ -143,12 +143,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.tag)       params.set('tag', args.tag)
         if (args.priority)  params.set('priority', args.priority)
 
-        let tasks = await api(`/tasks${params.size ? '?' + params : ''}`)
+        const qs = params.toString()
+        let tasks = await api(`/tasks${qs ? '?' + qs : ''}`)
 
-        if (args.include_done !== true) {
+        // Skip done-filter when a specific status was explicitly requested
+        if (args.include_done !== true && args.status !== 'done') {
           tasks = tasks.filter(t => t.status !== 'done')
         }
-        if (args.limit) {
+        if (args.limit && args.limit > 0) {
           tasks = tasks.slice(0, args.limit)
         }
 

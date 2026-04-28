@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
     if (status)    tasks = tasks.filter(t => t.status === status)
     if (tag)       tasks = tasks.filter(t => Array.isArray(t.tags) && t.tags.includes(tag))
     if (priority)  tasks = tasks.filter(t => t.priority === priority)
-    if (limit)     tasks = tasks.slice(0, parseInt(limit, 10))
+    if (limit) { const n = parseInt(limit, 10); if (!isNaN(n) && n > 0) tasks = tasks.slice(0, n) }
 
     res.json(tasks)
   } catch (err) {
