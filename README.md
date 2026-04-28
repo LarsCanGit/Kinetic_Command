@@ -1,8 +1,9 @@
+<img width="2522" height="1205" alt="screen2" src="https://github.com/user-attachments/assets/4b612036-ff6b-4097-8c4b-2627b3378733" />
 # KINETIC COMMAND
 
 A self-hosted kanban board with a REST API backend, styled with the **Organic Brutalism** design system. Data lives on your server in flat JSON files — no database required.
 
-![KINETIC COMMAND](screen.png)
+![KINETIC COMMAND]
 
 ---
 
