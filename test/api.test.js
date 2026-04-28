@@ -276,6 +276,189 @@ describe('PATCH /api/tasks/bulk', () => {
   })
 })
 
+// ── Task filtering ──────────────────────────────────────────────────────────
+
+describe('GET /api/tasks — server-side filters', () => {
+  it('filters by status', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const pid = project.body.id
+    await request(app).post('/api/tasks').send({ projectId: pid, title: 'Todo task', status: 'todo' })
+    await request(app).post('/api/tasks').send({ projectId: pid, title: 'Done task', status: 'done' })
+
+    const res = await request(app).get('/api/tasks?status=todo')
+    expect(res.status).toBe(200)
+    expect(res.body.every(t => t.status === 'todo')).toBe(true)
+    expect(res.body.some(t => t.title === 'Todo task')).toBe(true)
+    expect(res.body.some(t => t.title === 'Done task')).toBe(false)
+  })
+
+  it('filters by tag', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const pid = project.body.id
+    await request(app).post('/api/tasks').send({ projectId: pid, title: 'Tagged', tags: ['bug', 'urgent'] })
+    await request(app).post('/api/tasks').send({ projectId: pid, title: 'Untagged' })
+
+    const res = await request(app).get('/api/tasks?tag=bug')
+    expect(res.status).toBe(200)
+    expect(res.body.some(t => t.title === 'Tagged')).toBe(true)
+    expect(res.body.some(t => t.title === 'Untagged')).toBe(false)
+  })
+
+  it('tag filter skips tasks where tags is not an array', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const pid = project.body.id
+    await request(app).post('/api/tasks').send({ projectId: pid, title: 'Has tag', tags: ['bug'] })
+    await request(app).post('/api/tasks').send({ projectId: pid, title: 'No tags' })
+
+    const res = await request(app).get('/api/tasks?tag=bug')
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveLength(1)
+    expect(res.body[0].title).toBe('Has tag')
+  })
+
+  it('filters by priority', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const pid = project.body.id
+    await request(app).post('/api/tasks').send({ projectId: pid, title: 'High prio', priority: 'high' })
+    await request(app).post('/api/tasks').send({ projectId: pid, title: 'Low prio', priority: 'low' })
+
+    const res = await request(app).get('/api/tasks?priority=high')
+    expect(res.status).toBe(200)
+    expect(res.body.every(t => t.priority === 'high')).toBe(true)
+    expect(res.body.some(t => t.title === 'High prio')).toBe(true)
+    expect(res.body.some(t => t.title === 'Low prio')).toBe(false)
+  })
+
+  it('limits results via ?limit=', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const pid = project.body.id
+    for (let i = 0; i < 5; i++) {
+      await request(app).post('/api/tasks').send({ projectId: pid, title: `Task ${i}` })
+    }
+
+    const res = await request(app).get('/api/tasks?limit=2')
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveLength(2)
+  })
+
+  it('combines multiple filters', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const pid = project.body.id
+    await request(app).post('/api/tasks').send({ projectId: pid, title: 'Match', status: 'todo', priority: 'medium', tags: ['feat'] })
+    await request(app).post('/api/tasks').send({ projectId: pid, title: 'Wrong priority', status: 'todo', priority: 'low', tags: ['feat'] })
+    await request(app).post('/api/tasks').send({ projectId: pid, title: 'Wrong status', status: 'done', priority: 'medium', tags: ['feat'] })
+
+    const res = await request(app).get(`/api/tasks?projectId=${pid}&status=todo&priority=medium`)
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveLength(1)
+    expect(res.body[0].title).toBe('Match')
+  })
+})
+
+// ── Task tags and priority ───────────────────────────────────────────────────
+
+describe('POST /api/tasks — tags and priority', () => {
+  it('stores tags array', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ projectId: project.body.id, title: 'T', tags: ['bug', 'urgent'] })
+    expect(res.status).toBe(201)
+    expect(res.body.tags).toEqual(['bug', 'urgent'])
+  })
+
+  it('defaults tags to empty array when absent', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ projectId: project.body.id, title: 'T' })
+    expect(res.status).toBe(201)
+    expect(res.body.tags).toEqual([])
+  })
+
+  it('normalises non-array tags to empty array', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ projectId: project.body.id, title: 'T', tags: 'not-an-array' })
+    expect(res.status).toBe(201)
+    expect(res.body.tags).toEqual([])
+  })
+
+  it('stores priority', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ projectId: project.body.id, title: 'T', priority: 'critical' })
+    expect(res.status).toBe(201)
+    expect(res.body.priority).toBe('critical')
+  })
+
+  it('defaults priority to none when absent', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ projectId: project.body.id, title: 'T' })
+    expect(res.status).toBe(201)
+    expect(res.body.priority).toBe('none')
+  })
+})
+
+describe('PUT /api/tasks/:id — tags and priority', () => {
+  it('updates tags', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const task = await request(app)
+      .post('/api/tasks')
+      .send({ projectId: project.body.id, title: 'T', tags: ['old'] })
+
+    const res = await request(app)
+      .put(`/api/tasks/${task.body.id}`)
+      .send({ tags: ['new', 'tags'] })
+    expect(res.status).toBe(200)
+    expect(res.body.tags).toEqual(['new', 'tags'])
+  })
+
+  it('normalises non-array tags to empty array on update', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const task = await request(app)
+      .post('/api/tasks')
+      .send({ projectId: project.body.id, title: 'T', tags: ['old'] })
+
+    const res = await request(app)
+      .put(`/api/tasks/${task.body.id}`)
+      .send({ tags: 'not-array' })
+    expect(res.status).toBe(200)
+    expect(res.body.tags).toEqual([])
+  })
+
+  it('updates priority', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const task = await request(app)
+      .post('/api/tasks')
+      .send({ projectId: project.body.id, title: 'T', priority: 'low' })
+
+    const res = await request(app)
+      .put(`/api/tasks/${task.body.id}`)
+      .send({ priority: 'critical' })
+    expect(res.status).toBe(200)
+    expect(res.body.priority).toBe('critical')
+  })
+
+  it('preserves tags and priority when not in update payload', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const task = await request(app)
+      .post('/api/tasks')
+      .send({ projectId: project.body.id, title: 'T', tags: ['keep'], priority: 'high' })
+
+    const res = await request(app)
+      .put(`/api/tasks/${task.body.id}`)
+      .send({ title: 'Updated title' })
+    expect(res.status).toBe(200)
+    expect(res.body.tags).toEqual(['keep'])
+    expect(res.body.priority).toBe('high')
+  })
+})
+
 // ── Unknown API routes ──────────────────────────────────────────────────────
 
 describe('Unknown API routes', () => {
