@@ -44,14 +44,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: 'get_tasks',
-      description: 'Get tasks from the kanban board, optionally filtered by project',
+      description: 'Get tasks from the kanban board, optionally filtered. Done tasks are excluded by default — pass include_done: true to include them.',
       inputSchema: {
         type: 'object',
         properties: {
-          projectId: {
-            type: 'string',
-            description: 'Filter tasks by project ID (omit to get all tasks)',
-          },
+          projectId:    { type: 'string',  description: 'Filter by project ID' },
+          status:       { type: 'string',  enum: ['backlog', 'todo', 'in_progress', 'done'], description: 'Filter by exact status' },
+          tag:          { type: 'string',  description: 'Filter by a single tag' },
+          priority:     { type: 'string',  enum: ['none', 'low', 'medium', 'high', 'critical'], description: 'Filter by priority' },
+          limit:        { type: 'number',  description: 'Max tasks to return (applied after all filters)' },
+          include_done: { type: 'boolean', description: 'Include done tasks (default: false)' },
         },
       },
     },
@@ -135,10 +137,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break
 
       case 'get_tasks': {
-        const qs = args.projectId
-          ? `?projectId=${encodeURIComponent(args.projectId)}`
-          : ''
-        result = await api(`/tasks${qs}`)
+        const params = new URLSearchParams()
+        if (args.projectId) params.set('projectId', args.projectId)
+        if (args.status)    params.set('status', args.status)
+        if (args.tag)       params.set('tag', args.tag)
+        if (args.priority)  params.set('priority', args.priority)
+
+        let tasks = await api(`/tasks${params.size ? '?' + params : ''}`)
+
+        if (args.include_done !== true) {
+          tasks = tasks.filter(t => t.status !== 'done')
+        }
+        if (args.limit) {
+          tasks = tasks.slice(0, args.limit)
+        }
+
+        result = tasks
         break
       }
 
