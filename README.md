@@ -24,15 +24,12 @@ A self-hosted kanban board with a REST API backend, styled with the **Organic Br
 ```bash
 npm install
 
-# Terminal 1 — Vite frontend (hot reload)
+# Terminal 1 — API on port 7430, data in ./dev-data
+npm run server:dev
+
+# Terminal 2 — Vite on port 5173, proxies /api → 7430
 npm run dev          # http://localhost:5173
-
-# Terminal 2 — Express API + data server
-npm run server       # http://localhost:7429
 ```
-
-The Vite dev server proxies `/api` requests to the Express server.
-In dev mode the frontend hits `http://localhost:7429` directly.
 
 ---
 
@@ -123,9 +120,10 @@ The Express server exposes a JSON API under `/api`.
 |---|---|---|
 | GET | `/api/projects` | List all projects |
 | POST | `/api/projects` | Create a project `{ name }` |
-| GET | `/api/tasks` | List all tasks (optional `?projectId=` filter) |
-| POST | `/api/tasks` | Create a task `{ projectId, title, description?, status?, dueDate? }` |
+| GET | `/api/tasks` | List tasks — filters: `projectId`, `status`, `tag`, `priority`, `limit` |
+| POST | `/api/tasks` | Create a task `{ projectId, title, description?, status?, dueDate?, tags?, priority? }` |
 | PUT | `/api/tasks/:id` | Update a task |
+| PATCH | `/api/tasks/bulk` | Bulk-update status + order (used by drag-and-drop) |
 | DELETE | `/api/tasks/:id` | Delete a task |
 
 ---
@@ -182,9 +180,22 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 |---|---|
 | `list_projects` | List all projects |
 | `create_project` | Create a project by name |
-| `get_tasks` | Get all tasks, optionally filtered by `projectId` |
-| `create_task` | Create a task with title, description, status, dueDate |
+| `get_tasks` | Get tasks with optional filters (see below) |
+| `create_task` | Create a task with title, description, status, dueDate, tags, priority |
 | `update_task` | Update any field on an existing task |
+
+#### `get_tasks` filters
+
+| Param | Type | Description |
+|---|---|---|
+| `projectId` | string | Filter by project |
+| `status` | string | `backlog` \| `todo` \| `in_progress` \| `done` |
+| `tag` | string | Filter by a single tag |
+| `priority` | string | `none` \| `low` \| `medium` \| `high` \| `critical` |
+| `limit` | number | Max results (applied after all filters) |
+| `include_done` | boolean | Include done tasks — **default: false** |
+
+Done tasks are excluded by default so Claude only sees actionable work.
 
 ---
 
@@ -219,9 +230,18 @@ docker-compose.yml      — single-service compose config
 ## Features
 
 - **Multiple projects** — create, rename, and delete projects
-- **Three fixed lanes** — Todo, In Progress, Done
-- **Task cards** — title, description, and due date per card
+- **Four fixed lanes** — Backlog, Todo, In Progress, Done
+- **Task cards** — title, description, due date, tags, and priority per card
 - **Drag & drop** — reorder cards within and across lanes
 - **Persistent storage** — data written to JSON files on the server
-- **Export / Import** — back up and restore board data as JSON
-- **MCP integration** — AI agents can read and write the board via MCP tools
+- **MCP integration** — AI agents can read and write the board via MCP tools; done tasks excluded by default
+
+## Data model
+
+Four lanes (fixed): `backlog` → `todo` → `in_progress` → `done`
+
+**Workflow intent:** `backlog` = ideas not yet approved for development. `todo` = approved, specced, ready for Claude Code to pick up.
+
+Task fields: `id`, `projectId`, `title`, `description`, `dueDate`, `status`, `order`, `tags[]`, `priority`, `created_at`, `updated_at`
+
+Priority values: `none` | `low` | `medium` | `high` | `critical`
