@@ -80,6 +80,17 @@ export default function App() {
     }
   }, [addToast])
 
+  const renameProject = useCallback(async (id, name) => {
+    try {
+      const updated = await db.renameProject(id, name)
+      setProjects(prev => prev.map(p => p.id === id ? updated : p))
+      addToast('Project renamed')
+    } catch (err) {
+      addToast('Failed to rename project', 'error')
+      throw err
+    }
+  }, [addToast])
+
   const deleteProject = useCallback(async (id) => {
     if (!window.confirm('Delete this project and all its tasks?')) return
     try {
@@ -275,6 +286,7 @@ export default function App() {
           projects={projects}
           currentProjectId={currentProjectId}
           onCreateProject={createProject}
+          onRenameProject={renameProject}
           onDeleteProject={deleteProject}
           onSwitchProject={switchProject}
           onClose={() => setProjectModalOpen(false)}

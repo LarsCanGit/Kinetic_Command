@@ -27,6 +27,13 @@ export async function addProject(name) {
   })
 }
 
+export async function renameProject(id, name) {
+  return request(`${API}/projects/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ name }),
+  })
+}
+
 export async function deleteProject(id) {
   return request(`${API}/projects/${id}`, { method: 'DELETE' })
 }

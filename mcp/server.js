@@ -43,6 +43,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: 'rename_project',
+      description: 'Rename an existing project on the kanban board',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id:   { type: 'string', description: 'Project ID' },
+          name: { type: 'string', description: 'New project name' },
+        },
+        required: ['id', 'name'],
+      },
+    },
+    {
       name: 'get_tasks',
       description: 'Get tasks from the kanban board, optionally filtered. Done tasks are excluded by default — pass include_done: true to include them.',
       inputSchema: {
@@ -132,6 +144,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'create_project':
         result = await api('/projects', {
           method: 'POST',
+          body: JSON.stringify({ name: args.name }),
+        })
+        break
+
+      case 'rename_project':
+        result = await api(`/projects/${args.id}`, {
+          method: 'PUT',
           body: JSON.stringify({ name: args.name }),
         })
         break
