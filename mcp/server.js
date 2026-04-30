@@ -66,6 +66,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           priority:     { type: 'string',  enum: ['none', 'low', 'medium', 'high', 'critical'], description: 'Filter by priority' },
           limit:        { type: 'number',  description: 'Max tasks to return (applied after all filters)' },
           include_done: { type: 'boolean', description: 'Include done tasks (default: false)' },
+          id:           { type: 'string',  description: 'Filter by exact task ID' },
+          title:        { type: 'string',  description: 'Filter by title substring (case-insensitive)' },
         },
       },
     },
@@ -161,6 +163,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.status)    params.set('status', args.status)
         if (args.tag)       params.set('tag', args.tag)
         if (args.priority)  params.set('priority', args.priority)
+        if (args.id)        params.set('id', args.id)
+        if (args.title)     params.set('title', args.title)
 
         const qs = params.toString()
         let tasks = await api(`/tasks${qs ? '?' + qs : ''}`)

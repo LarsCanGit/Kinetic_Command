@@ -7,16 +7,18 @@ const router = Router()
 // Canonical lane statuses — keep in sync with frontend (Board.jsx, Lane.jsx, CardModal.jsx)
 const VALID_STATUSES = ['backlog', 'todo', 'in_progress', 'done']
 
-// GET /api/tasks — get tasks, optionally filtered by projectId, status, tag, priority, limit
+// GET /api/tasks — get tasks, optionally filtered by projectId, status, tag, priority, limit, id, title
 router.get('/', async (req, res) => {
   try {
-    const { projectId, status, tag, priority, limit } = req.query
+    const { projectId, status, tag, priority, limit, id, title } = req.query
     let tasks = await getTasks()
 
     if (projectId) tasks = tasks.filter(t => t.projectId === projectId)
     if (status)    tasks = tasks.filter(t => t.status === status)
     if (tag)       tasks = tasks.filter(t => Array.isArray(t.tags) && t.tags.includes(tag))
     if (priority)  tasks = tasks.filter(t => t.priority === priority)
+    if (id)        tasks = tasks.filter(t => t.id === id)
+    if (title)     tasks = tasks.filter(t => t.title.toLowerCase().includes(title.toLowerCase()))
     if (limit) { const n = parseInt(limit, 10); if (!isNaN(n) && n > 0) tasks = tasks.slice(0, n) }
 
     res.json(tasks)
