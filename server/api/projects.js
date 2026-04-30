@@ -38,6 +38,29 @@ router.post('/', async (req, res) => {
   }
 })
 
+// PUT /api/projects/:id — rename a project
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { name } = req.body
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Project name is required' })
+    }
+    const projects = await getProjects()
+    const project = projects.find(p => p.id === id)
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' })
+    }
+    project.name = name.trim()
+    project.updated_at = new Date().toISOString()
+    await saveProjects(projects)
+    res.json(project)
+  } catch (err) {
+    console.error('PUT /api/projects error:', err)
+    res.status(500).json({ error: 'Failed to rename project' })
+  }
+})
+
 // DELETE /api/projects/:id — delete project and its tasks
 router.delete('/:id', async (req, res) => {
   try {
