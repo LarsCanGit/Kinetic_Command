@@ -87,7 +87,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           dueDate: { type: 'string', description: 'Due date in ISO 8601 format' },
           tags: {
-            type: ['array', 'null'],
+            type: 'array',
             items: { type: 'string' },
             description: 'List of tags to categorize the task',
           },
@@ -116,7 +116,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           dueDate: { type: 'string', description: 'New due date in ISO 8601 format' },
           tags: {
-            type: ['array', 'null'],
+            type: 'array',
             items: { type: 'string' },
             description: 'List of tags to categorize the task',
           },
