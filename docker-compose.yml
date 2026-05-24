@@ -1,3 +1,5 @@
+name: kineticcommand
+
 services:
   kanban:
     image: kinetic-command:${TAG:-latest}
