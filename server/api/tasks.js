@@ -127,6 +127,37 @@ router.patch('/bulk', async (req, res) => {
   }
 })
 
+// PATCH /api/tasks/:id/move — move a task to a different project
+router.patch('/:id/move', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { projectId } = req.body
+    if (!projectId) return res.status(400).json({ error: 'projectId is required' })
+
+    const [allTasks, projects] = await Promise.all([getTasks(), getProjects()])
+
+    const index = allTasks.findIndex(t => t.id === id)
+    if (index === -1) return res.status(404).json({ error: 'Task not found' })
+
+    if (!projects.find(p => p.id === projectId)) {
+      return res.status(404).json({ error: 'Project not found' })
+    }
+
+    const task = allTasks[index]
+    if (task.projectId === projectId) return res.json(task)
+
+    const laneTasks = allTasks.filter(t => t.projectId === projectId && t.status === task.status)
+    const maxOrder = laneTasks.length > 0 ? Math.max(...laneTasks.map(t => t.order)) : 0
+
+    allTasks[index] = { ...task, projectId, order: maxOrder + 1, updated_at: new Date().toISOString() }
+    await saveTasks(allTasks)
+    res.json(allTasks[index])
+  } catch (err) {
+    console.error('PATCH /api/tasks/:id/move error:', err)
+    res.status(500).json({ error: 'Failed to move task' })
+  }
+})
+
 // DELETE /api/tasks/:id — delete a task
 router.delete('/:id', async (req, res) => {
   try {

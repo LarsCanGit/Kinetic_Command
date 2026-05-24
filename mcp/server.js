@@ -101,6 +101,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: 'move_task',
+      description: 'Move a task to a different project, placing it at the end of its current lane in the destination project',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id:        { type: 'string', description: 'Task ID' },
+          projectId: { type: 'string', description: 'Destination project ID' },
+        },
+        required: ['id', 'projectId'],
+      },
+    },
+    {
       name: 'update_task',
       description: 'Update an existing task (title, description, status, dueDate, tags, priority)',
       inputSchema: {
@@ -185,6 +197,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         result = await api('/tasks', {
           method: 'POST',
           body: JSON.stringify({ ...args, tags: args.tags ?? [] }),
+        })
+        break
+
+      case 'move_task':
+        result = await api(`/tasks/${args.id}/move`, {
+          method: 'PATCH',
+          body: JSON.stringify({ projectId: args.projectId }),
         })
         break
 
