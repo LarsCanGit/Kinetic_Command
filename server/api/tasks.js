@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
-import { getTasks, saveTasks } from '../fileStorage.js'
+import { getTasks, saveTasks, getProjects } from '../fileStorage.js'
 
 const router = Router()
 
@@ -34,6 +34,11 @@ router.post('/', async (req, res) => {
     const { projectId, title, description, dueDate, status, tags, priority } = req.body
     if (!projectId) return res.status(400).json({ error: 'projectId is required' })
     if (!title || !title.trim()) return res.status(400).json({ error: 'title is required' })
+
+    const projects = await getProjects()
+    if (!projects.find(p => p.id === projectId)) {
+      return res.status(404).json({ error: 'Project not found' })
+    }
 
     const taskStatus = VALID_STATUSES.includes(status) ? status : 'todo'
 

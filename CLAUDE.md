@@ -45,6 +45,12 @@ Three fixed lanes: `todo` / `in_progress` / `done` — not configurable.
 
 Card fields: `title`, `description`, `dueDate`, `status`, `order` — no assignees, priority, or ticket IDs.
 
+## Kanban MCP
+
+When the user mentions "kanban", "kanban board", or "tasks", always use the **kanban MCP server** (`mcp__kanban__*` tools) — never read the flat JSON files directly.
+
+- **Kinetic Command project ID:** `07b72523-6290-45e9-ada1-fb7500d9ad30`
+
 ## What NOT to commit
 
 `.env`, `.env.local`, `.claude/`, `dev-data/`, `test-data/`, `dist/`, `node_modules/`, any `*.md` except this file and `README.md`, `code.html`, research HTML files.
