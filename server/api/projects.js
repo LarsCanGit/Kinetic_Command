@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import { getProjects, saveProjects, getTasks, saveTasks } from '../fileStorage.js'
+import { sanitizeText } from '../utils/sanitizeText.js'
 
 const router = Router()
 
@@ -24,7 +25,7 @@ router.post('/', async (req, res) => {
     }
     const project = {
       id: uuidv4(),
-      name: name.trim(),
+      name: sanitizeText(name).trim(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
@@ -51,7 +52,7 @@ router.put('/:id', async (req, res) => {
     if (!project) {
       return res.status(404).json({ error: 'Project not found' })
     }
-    project.name = name.trim()
+    project.name = sanitizeText(name).trim()
     project.updated_at = new Date().toISOString()
     await saveProjects(projects)
     res.json(project)

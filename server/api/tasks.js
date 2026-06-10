@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import { getTasks, saveTasks } from '../fileStorage.js'
+import { sanitizeText } from '../utils/sanitizeText.js'
 
 const router = Router()
 
@@ -44,12 +45,12 @@ router.post('/', async (req, res) => {
     const task = {
       id: uuidv4(),
       projectId,
-      title: title.trim(),
-      description: description?.trim() || '',
+      title: sanitizeText(title).trim(),
+      description: sanitizeText(description)?.trim() || '',
       dueDate: dueDate || null,
       status: taskStatus,
       order: maxOrder + 1,
-      tags: Array.isArray(tags) ? tags : [],
+      tags: Array.isArray(tags) ? tags.map(t => sanitizeText(t)) : [],
       priority: priority || 'none',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -78,12 +79,12 @@ router.put('/:id', async (req, res) => {
     }
     const updated = {
       ...existing,
-      ...(title !== undefined && { title: title.trim() }),
-      ...(description !== undefined && { description: description.trim() }),
+      ...(title !== undefined && { title: sanitizeText(title).trim() }),
+      ...(description !== undefined && { description: sanitizeText(description).trim() }),
       ...(dueDate !== undefined && { dueDate: dueDate || null }),
       ...(status !== undefined && { status }),
       ...(order !== undefined && { order }),
-      ...(tags !== undefined && { tags: Array.isArray(tags) ? tags : [] }),
+      ...(tags !== undefined && { tags: Array.isArray(tags) ? tags.map(t => sanitizeText(t)) : [] }),
       ...(priority !== undefined && { priority }),
       updated_at: new Date().toISOString(),
     }
