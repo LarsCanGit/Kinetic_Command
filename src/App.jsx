@@ -66,6 +66,18 @@ export default function App() {
 
   const currentProject = projects.find(p => p.id === currentProjectId) ?? null
 
+  const refreshTasks = useCallback(async () => {
+    if (!currentProjectId) return
+    try {
+      const loaded = await db.getTasksByProject(currentProjectId)
+      setTasks(loaded.sort((a, b) => a.order - b.order))
+      addToast('Board refreshed')
+    } catch (err) {
+      console.error('Refresh failed', err)
+      addToast('Failed to refresh', 'error')
+    }
+  }, [currentProjectId, addToast])
+
   // ── Project operations ──────────────────────────────────────────────────────
 
   const createProject = useCallback(async (name) => {
@@ -253,6 +265,7 @@ export default function App() {
           onDeleteCard={deleteTask}
           onMoveTask={moveTask}
           onOpenProjectModal={() => setProjectModalOpen(true)}
+          onRefresh={refreshTasks}
           onExport={handleExport}
           onImport={handleImport}
         />

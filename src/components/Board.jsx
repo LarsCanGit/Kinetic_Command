@@ -32,6 +32,7 @@ export default function Board({
   onDeleteCard,
   onMoveTask,
   onOpenProjectModal,
+  onRefresh,
   onExport,
   onImport,
 }) {
@@ -156,16 +157,28 @@ export default function Board({
     <div>
       {/* Board header */}
       <header className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6 mb-12">
-        <button
-          onClick={onOpenProjectModal}
-          className="bg-primary text-on-primary px-4 py-2 flex items-center gap-3 cursor-pointer group hover:brightness-110 transition-all text-lg font-bold"
-          data-testid="project-selector-btn"
-        >
-          <span className="font-headline tracking-tight">
-            {currentProject?.name ?? 'Select Project'}
-          </span>
-          <span className="material-symbols-outlined">unfold_more</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onRefresh}
+            className="bg-surface-container-low hover:bg-surface-container-high px-3 py-2 flex items-center justify-center transition-all group"
+            title="Refresh board from database"
+            data-testid="refresh-btn"
+          >
+            <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary">
+              refresh
+            </span>
+          </button>
+          <button
+            onClick={onOpenProjectModal}
+            className="bg-primary text-on-primary px-4 py-2 flex items-center gap-3 cursor-pointer group hover:brightness-110 transition-all text-lg font-bold"
+            data-testid="project-selector-btn"
+          >
+            <span className="font-headline tracking-tight">
+              {currentProject?.name ?? 'Select Project'}
+            </span>
+            <span className="material-symbols-outlined">unfold_more</span>
+          </button>
+        </div>
 
         <div className="flex items-center gap-3">
           <button
