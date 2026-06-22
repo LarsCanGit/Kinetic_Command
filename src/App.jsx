@@ -203,21 +203,21 @@ export default function App() {
     }
   }, [addToast])
 
-  const handleImport = useCallback(async (file) => {
-    try {
-      const text = await file.text()
-      const data = JSON.parse(text)
-      if (!data.version || !Array.isArray(data.projects) || !Array.isArray(data.tasks)) {
-        throw new Error('Invalid file format')
-      }
-      if (!window.confirm('This will replace all current data. Continue?')) return
-      // Import via API: delete all existing, then recreate
-      // For simplicity, we'll POST each project and task
-      // A future enhancement could add a dedicated import endpoint
-      addToast('Import is not yet supported via API', 'error')
-    } catch (err) {
-      addToast('Import failed: ' + err.message, 'error')
+  const handleRestore = useCallback(async (data) => {
+    const result = await db.restoreData(data)
+    const projectList = await db.getProjects()
+    projectList.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    setProjects(projectList)
+    const newProjectId = projectList.length > 0 ? projectList[0].id : null
+    setCurrentProjectId(newProjectId)
+    if (newProjectId) {
+      const loaded = await db.getTasksByProject(newProjectId)
+      setTasks(loaded.sort((a, b) => a.order - b.order))
+    } else {
+      setTasks([])
     }
+    setCurrentPage('board')
+    addToast(`Restored ${result.projects} projects and ${result.tasks} tasks`)
   }, [addToast])
 
   // ── Modal helpers ───────────────────────────────────────────────────────────
@@ -275,7 +275,7 @@ export default function App() {
             onImport={handleImport}
           />
         ) : (
-          <DatabasePage onExport={handleExport} />
+          <DatabasePage onExport={handleExport} onRestore={handleRestore} />
         )}
       </main>
 
