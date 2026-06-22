@@ -84,3 +84,10 @@ export async function exportData() {
     tasks,
   }
 }
+
+export async function restoreData(data) {
+  return request(`${API}/restore`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}

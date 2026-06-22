@@ -1,6 +1,7 @@
 import express from 'express'
 import projectsRouter from './api/projects.js'
 import tasksRouter from './api/tasks.js'
+import restoreRouter from './api/restore.js'
 
 export function createApp() {
   const app = express()
@@ -8,6 +9,7 @@ export function createApp() {
 
   app.use('/api/projects', projectsRouter)
   app.use('/api/tasks', tasksRouter)
+  app.use('/api/restore', restoreRouter)
 
   // Catch-all 404 for unknown API routes
   app.all('/api/*', (req, res) => {
