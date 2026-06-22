@@ -69,9 +69,7 @@ function validateRestoreData(data) {
     if (typeof t.order !== 'number' || isNaN(t.order)) {
       return `tasks[${i}]: missing or invalid "order" (expected number)`
     }
-    if (!projectIds.has(t.projectId)) {
-      return `tasks[${i}]: projectId "${t.projectId}" does not match any project in the backup`
-    }
+
     if (taskIds.has(t.id)) {
       return `tasks[${i}]: duplicate task id "${t.id}"`
     }
