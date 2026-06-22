@@ -272,7 +272,7 @@ export default function App() {
             onOpenProjectModal={() => setProjectModalOpen(true)}
             onRefresh={refreshTasks}
             onExport={handleExport}
-            onImport={handleImport}
+
           />
         ) : (
           <DatabasePage onExport={handleExport} onRestore={handleRestore} />

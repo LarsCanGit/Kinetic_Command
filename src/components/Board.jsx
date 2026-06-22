@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -34,13 +34,12 @@ export default function Board({
   onOpenProjectModal,
   onRefresh,
   onExport,
-  onImport,
 }) {
   // items holds the ordered IDs per lane — updated synchronously during drag
   // so the DOM is already in the correct position when the drop lands.
   const [items, setItems] = useState(() => buildItems(tasks))
   const [activeId, setActiveId] = useState(null)
-  const importRef = useRef(null)
+
 
   // Sync items when tasks change externally (project switch, add, delete)
   // but NOT during an active drag (would reset the in-progress move).
@@ -135,18 +134,6 @@ export default function Board({
     if (updated.length > 0) onMoveTask(updated)
   }
 
-  function handleImportClick() {
-    importRef.current?.click()
-  }
-
-  function handleFileChange(e) {
-    const file = e.target.files?.[0]
-    if (file) {
-      onImport(file)
-      e.target.value = ''
-    }
-  }
-
   // Derive ordered task arrays for each lane from items (not raw tasks)
   const tasksByLane = LANE_IDS.reduce((acc, id) => {
     acc[id] = items[id].map(taskId => taskMap.get(taskId)).filter(Boolean)
@@ -192,7 +179,7 @@ export default function Board({
             </span>
             <span className="text-xs font-label uppercase tracking-wider">Export</span>
           </button>
-          {/* Import hidden — not yet implemented via API (see TODOS.md) */}
+
         </div>
       </header>
 
