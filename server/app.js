@@ -5,7 +5,7 @@ import restoreRouter from './api/restore.js'
 
 export function createApp() {
   const app = express()
-  app.use(express.json())
+  app.use(express.json({ limit: '10mb' }))
 
   app.use('/api/projects', projectsRouter)
   app.use('/api/tasks', tasksRouter)

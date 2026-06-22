@@ -1,8 +1,7 @@
-import express, { Router } from 'express'
+import { Router } from 'express'
 import { saveProjects, saveTasks } from '../fileStorage.js'
 
 const router = Router()
-router.use(express.json({ limit: '10mb' }))
 
 const VALID_STATUSES = ['backlog', 'todo', 'in_progress', 'done']
 
