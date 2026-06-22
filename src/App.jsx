@@ -6,6 +6,7 @@ import Board from './components/Board'
 import CardModal from './components/CardModal'
 import ProjectModal from './components/ProjectModal'
 import Toast from './components/Toast'
+import DatabasePage from './components/DatabasePage'
 
 let toastCounter = 0
 
@@ -18,6 +19,7 @@ export default function App() {
   const [projectModalOpen, setProjectModalOpen] = useState(false)
   const [toasts, setToasts] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(() => localStorage.getItem('sidebarOpen') !== 'false')
+  const [currentPage, setCurrentPage] = useState('board')
 
   const tasksRef = useRef(tasks)
   useEffect(() => { tasksRef.current = tasks }, [tasks])
@@ -253,33 +255,41 @@ export default function App() {
         open={sidebarOpen}
         onClose={() => { setSidebarOpen(false); localStorage.setItem('sidebarOpen', 'false') }}
         onOpen={() => { setSidebarOpen(true); localStorage.setItem('sidebarOpen', 'true') }}
+        currentPage={currentPage}
+        onNavigate={setCurrentPage}
       />
 
       <main className={`${sidebarOpen ? 'ml-64' : 'ml-10'} mt-16 p-8 min-h-[calc(100vh-4rem)] overflow-y-auto h-[calc(100vh-4rem)]`}>
-        <Board
-          tasks={tasks}
-          currentProject={currentProject}
-          projects={projects}
-          onAddCard={openNewCard}
-          onEditCard={openEditCard}
-          onDeleteCard={deleteTask}
-          onMoveTask={moveTask}
-          onOpenProjectModal={() => setProjectModalOpen(true)}
-          onRefresh={refreshTasks}
-          onExport={handleExport}
-          onImport={handleImport}
-        />
+        {currentPage === 'board' ? (
+          <Board
+            tasks={tasks}
+            currentProject={currentProject}
+            projects={projects}
+            onAddCard={openNewCard}
+            onEditCard={openEditCard}
+            onDeleteCard={deleteTask}
+            onMoveTask={moveTask}
+            onOpenProjectModal={() => setProjectModalOpen(true)}
+            onRefresh={refreshTasks}
+            onExport={handleExport}
+            onImport={handleImport}
+          />
+        ) : (
+          <DatabasePage onExport={handleExport} />
+        )}
       </main>
 
       {/* FAB */}
-      <button
-        onClick={() => openNewCard('todo')}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary-fixed rounded-sm shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-50"
-        title="Add task"
-        data-testid="fab-new-task"
-      >
-        <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>add_task</span>
-      </button>
+      {currentPage === 'board' && (
+        <button
+          onClick={() => openNewCard('todo')}
+          className="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary-fixed rounded-sm shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-50"
+          title="Add task"
+          data-testid="fab-new-task"
+        >
+          <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>add_task</span>
+        </button>
+      )}
 
       {/* Modals */}
       {cardModal.open && (
