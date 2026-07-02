@@ -24,6 +24,7 @@ describe('RestoreConfirmModal', () => {
     const onConfirm = vi.fn()
     render(<RestoreConfirmModal projectCount={1} taskCount={1} onConfirm={onConfirm} onClose={vi.fn()} />)
     await user.click(screen.getByText('Restore'))
+    // Component passes SyntheticEvent to onConfirm, so toHaveBeenCalled() is correct (not toHaveBeenCalledWith())
     expect(onConfirm).toHaveBeenCalled()
   })
 
