@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const apiPort = env.PORT || 7429
+  const apiPort = env.API_PORT || env.PORT || 7429
 
   return {
     plugins: [react()],

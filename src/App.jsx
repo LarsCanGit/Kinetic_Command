@@ -220,6 +220,13 @@ export default function App() {
     addToast(`Restored ${result.projects} projects and ${result.tasks} tasks`)
   }, [addToast])
 
+  const handleCleanup = useCallback(async (taskIds) => {
+    const result = await db.cleanupTasks(taskIds)
+    const idSet = new Set(taskIds)
+    setTasks(prev => prev.filter(t => !idSet.has(t.id)))
+    addToast(`Deleted ${result.deleted} task${result.deleted === 1 ? '' : 's'}`)
+  }, [addToast])
+
   // ── Modal helpers ───────────────────────────────────────────────────────────
 
   const openNewCard = useCallback((lane = 'todo') => {
@@ -275,7 +282,7 @@ export default function App() {
 
           />
         ) : (
-          <DatabasePage onExport={handleExport} onRestore={handleRestore} />
+          <DatabasePage onExport={handleExport} onRestore={handleRestore} onCleanup={handleCleanup} />
         )}
       </main>
 

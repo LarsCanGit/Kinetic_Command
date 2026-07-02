@@ -468,3 +468,315 @@ describe('Unknown API routes', () => {
     expect(res.body.error).toBe('Not found')
   })
 })
+
+// ── Restore ─────────────────────────────────────────────────────────────────
+
+function validProject(overrides = {}) {
+  return {
+    id: 'p1',
+    name: 'Restored Project',
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  }
+}
+
+function validTask(overrides = {}) {
+  return {
+    id: 't1',
+    projectId: 'p1',
+    title: 'Restored Task',
+    status: 'todo',
+    order: 1,
+    ...overrides,
+  }
+}
+
+describe('POST /api/restore', () => {
+  it('restores valid projects and tasks', async () => {
+    const res = await request(app)
+      .post('/api/restore')
+      .send({ version: '1', projects: [validProject()], tasks: [validTask()] })
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ success: true, projects: 1, tasks: 1 })
+
+    const projects = await request(app).get('/api/projects')
+    expect(projects.body).toHaveLength(1)
+    expect(projects.body[0].name).toBe('Restored Project')
+
+    const tasks = await request(app).get('/api/tasks')
+    expect(tasks.body).toHaveLength(1)
+    expect(tasks.body[0].title).toBe('Restored Task')
+  })
+
+  it('replaces existing data rather than merging', async () => {
+    await request(app).post('/api/projects').send({ name: 'Old Project' })
+
+    await request(app)
+      .post('/api/restore')
+      .send({ version: '1', projects: [validProject({ id: 'p2', name: 'New Project' })], tasks: [] })
+
+    const projects = await request(app).get('/api/projects')
+    expect(projects.body).toHaveLength(1)
+    expect(projects.body[0].name).toBe('New Project')
+  })
+
+  it('rejects missing version', async () => {
+    const res = await request(app)
+      .post('/api/restore')
+      .send({ projects: [], tasks: [] })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/version/i)
+  })
+
+  it('rejects non-array projects', async () => {
+    const res = await request(app)
+      .post('/api/restore')
+      .send({ version: '1', projects: 'nope', tasks: [] })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/projects/i)
+  })
+
+  it('rejects non-array tasks', async () => {
+    const res = await request(app)
+      .post('/api/restore')
+      .send({ version: '1', projects: [], tasks: 'nope' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/tasks/i)
+  })
+
+  it('rejects project missing id/name/created_at/updated_at', async () => {
+    const fields = ['id', 'name', 'created_at', 'updated_at']
+    for (const field of fields) {
+      const project = validProject()
+      delete project[field]
+      const res = await request(app)
+        .post('/api/restore')
+        .send({ version: '1', projects: [project], tasks: [] })
+      expect(res.status).toBe(400)
+    }
+  })
+
+  it('rejects duplicate project ids', async () => {
+    const res = await request(app)
+      .post('/api/restore')
+      .send({ version: '1', projects: [validProject(), validProject()], tasks: [] })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/duplicate/i)
+  })
+
+  it('rejects task missing id or title', async () => {
+    for (const field of ['id', 'title']) {
+      const task = validTask()
+      delete task[field]
+      const res = await request(app)
+        .post('/api/restore')
+        .send({ version: '1', projects: [validProject()], tasks: [task] })
+      expect(res.status).toBe(400)
+    }
+  })
+
+  it('rejects task with invalid status', async () => {
+    const res = await request(app)
+      .post('/api/restore')
+      .send({ version: '1', projects: [validProject()], tasks: [validTask({ status: 'banana' })] })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/status/i)
+  })
+
+  it('rejects task with non-numeric order', async () => {
+    const res = await request(app)
+      .post('/api/restore')
+      .send({ version: '1', projects: [validProject()], tasks: [validTask({ order: 'first' })] })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/order/i)
+  })
+
+  it('rejects duplicate task ids', async () => {
+    const res = await request(app)
+      .post('/api/restore')
+      .send({ version: '1', projects: [validProject()], tasks: [validTask(), validTask()] })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/duplicate/i)
+  })
+
+  it('rejects task with missing projectId', async () => {
+    const task = validTask()
+    delete task.projectId
+    const res = await request(app)
+      .post('/api/restore')
+      .send({ version: '1', projects: [validProject()], tasks: [task] })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/projectId/i)
+  })
+
+  it('allows a task whose projectId does not match any project (orphaned)', async () => {
+    const res = await request(app)
+      .post('/api/restore')
+      .send({
+        version: '1',
+        projects: [validProject()],
+        tasks: [validTask({ projectId: 'no-such-project' })],
+      })
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ success: true, projects: 1, tasks: 1 })
+
+    const tasks = await request(app).get('/api/tasks')
+    expect(tasks.body[0].projectId).toBe('no-such-project')
+  })
+
+  it('accepts a large payload well under the 10mb body limit', async () => {
+    const project = validProject()
+    const tasks = Array.from({ length: 2000 }, (_, i) =>
+      validTask({ id: `t${i}`, title: `Task ${i}`, order: i + 1 })
+    )
+    const res = await request(app)
+      .post('/api/restore')
+      .send({ version: '1', projects: [project], tasks })
+    expect(res.status).toBe(200)
+    expect(res.body.tasks).toBe(2000)
+  })
+})
+
+// ── Cleanup ─────────────────────────────────────────────────────────────────
+
+describe('GET /api/cleanup/candidates', () => {
+  it('returns empty lists when nothing qualifies', async () => {
+    const res = await request(app).get('/api/cleanup/candidates?days=30')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ oldCompleted: [], orphaned: [] })
+  })
+
+  it('rejects missing days', async () => {
+    const res = await request(app).get('/api/cleanup/candidates')
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects negative days', async () => {
+    const res = await request(app).get('/api/cleanup/candidates?days=-1')
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects non-numeric days', async () => {
+    const res = await request(app).get('/api/cleanup/candidates?days=abc')
+    expect(res.status).toBe(400)
+  })
+
+  it('includes a done task older than the cutoff with its project name', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'Old Stuff' })
+    const oldDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+    await request(app)
+      .post('/api/restore')
+      .send({
+        version: '1',
+        projects: [validProject({ id: project.body.id, name: project.body.name, created_at: project.body.created_at, updated_at: project.body.updated_at })],
+        tasks: [validTask({ id: 'old1', projectId: project.body.id, status: 'done', updated_at: oldDate, title: 'Old done task' })],
+      })
+
+    const res = await request(app).get('/api/cleanup/candidates?days=30')
+    expect(res.body.oldCompleted).toHaveLength(1)
+    expect(res.body.oldCompleted[0].title).toBe('Old done task')
+    expect(res.body.oldCompleted[0].projectName).toBe('Old Stuff')
+  })
+
+  it('excludes a done task newer than the cutoff', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const task = await request(app)
+      .post('/api/tasks')
+      .send({ projectId: project.body.id, title: 'Recently done' })
+    await request(app).put(`/api/tasks/${task.body.id}`).send({ status: 'done' })
+
+    const res = await request(app).get('/api/cleanup/candidates?days=30')
+    expect(res.body.oldCompleted).toHaveLength(0)
+  })
+
+  it('excludes a non-done task regardless of age', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const oldDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+    await request(app)
+      .post('/api/restore')
+      .send({
+        version: '1',
+        projects: [validProject({ id: project.body.id, name: project.body.name, created_at: project.body.created_at, updated_at: project.body.updated_at })],
+        tasks: [validTask({ id: 'old2', projectId: project.body.id, status: 'todo', updated_at: oldDate })],
+      })
+
+    const res = await request(app).get('/api/cleanup/candidates?days=30')
+    expect(res.body.oldCompleted).toHaveLength(0)
+  })
+
+  it('flags a task with a projectId that matches no project as orphaned', async () => {
+    await request(app)
+      .post('/api/restore')
+      .send({
+        version: '1',
+        projects: [],
+        tasks: [validTask({ projectId: 'ghost-project' })],
+      })
+
+    const res = await request(app).get('/api/cleanup/candidates?days=30')
+    expect(res.body.orphaned).toHaveLength(1)
+    expect(res.body.orphaned[0].id).toBe('t1')
+  })
+
+  it('excludes a normal task with a valid projectId from orphaned', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    await request(app).post('/api/tasks').send({ projectId: project.body.id, title: 'Fine' })
+
+    const res = await request(app).get('/api/cleanup/candidates?days=30')
+    expect(res.body.orphaned).toHaveLength(0)
+  })
+
+  it('classifies a task that is both old-completed and orphaned as orphaned only', async () => {
+    const oldDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+    await request(app)
+      .post('/api/restore')
+      .send({
+        version: '1',
+        projects: [],
+        tasks: [validTask({ projectId: 'ghost-project', status: 'done', updated_at: oldDate })],
+      })
+
+    const res = await request(app).get('/api/cleanup/candidates?days=30')
+    expect(res.body.orphaned).toHaveLength(1)
+    expect(res.body.oldCompleted).toHaveLength(0)
+  })
+})
+
+describe('POST /api/cleanup', () => {
+  it('deletes exactly the requested tasks and leaves others', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    const t1 = await request(app).post('/api/tasks').send({ projectId: project.body.id, title: 'Delete me' })
+    const t2 = await request(app).post('/api/tasks').send({ projectId: project.body.id, title: 'Keep me' })
+
+    const res = await request(app).post('/api/cleanup').send({ taskIds: [t1.body.id] })
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ success: true, deleted: 1 })
+
+    const tasks = await request(app).get('/api/tasks')
+    expect(tasks.body).toHaveLength(1)
+    expect(tasks.body[0].id).toBe(t2.body.id)
+  })
+
+  it('rejects an empty taskIds array', async () => {
+    const res = await request(app).post('/api/cleanup').send({ taskIds: [] })
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects a missing taskIds field', async () => {
+    const res = await request(app).post('/api/cleanup').send({})
+    expect(res.status).toBe(400)
+  })
+
+  it('no-ops for unknown ids without error', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    await request(app).post('/api/tasks').send({ projectId: project.body.id, title: 'Stays' })
+
+    const res = await request(app).post('/api/cleanup').send({ taskIds: ['nonexistent-id'] })
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ success: true, deleted: 0 })
+
+    const tasks = await request(app).get('/api/tasks')
+    expect(tasks.body).toHaveLength(1)
+  })
+})

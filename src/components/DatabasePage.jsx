@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react'
 import RestoreConfirmModal from './RestoreConfirmModal'
+import CleanupModal from './CleanupModal'
 
-export default function DatabasePage({ onExport, onRestore }) {
+export default function DatabasePage({ onExport, onRestore, onCleanup }) {
   const [restoreData, setRestoreData] = useState(null)
   const [restoreError, setRestoreError] = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showCleanup, setShowCleanup] = useState(false)
   const fileInputRef = useRef(null)
 
   function handleFileSelect(e) {
@@ -105,6 +107,34 @@ export default function DatabasePage({ onExport, onRestore }) {
           taskCount={restoreData.tasks.length}
           onConfirm={handleConfirmRestore}
           onClose={() => { setShowConfirm(false); setRestoreData(null) }}
+        />
+      )}
+
+      <section className="mt-8">
+        <h2 className="text-xs font-label text-on-surface-variant tracking-widest uppercase mb-4">Clean up</h2>
+        <div className="bg-surface-container-high p-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="material-symbols-outlined text-primary text-2xl">delete_sweep</span>
+            <div>
+              <p className="text-sm font-bold text-on-surface">Clean up database</p>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                Remove old completed tasks and orphaned tasks
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowCleanup(true)}
+            className="bg-surface-container-highest text-on-surface text-sm font-bold px-4 py-2 hover:bg-outline-variant/30 transition-colors"
+          >
+            Clean up
+          </button>
+        </div>
+      </section>
+
+      {showCleanup && (
+        <CleanupModal
+          onConfirm={async (taskIds) => { await onCleanup(taskIds); setShowCleanup(false) }}
+          onClose={() => setShowCleanup(false)}
         />
       )}
     </div>

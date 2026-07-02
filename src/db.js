@@ -91,3 +91,16 @@ export async function restoreData(data) {
     body: JSON.stringify(data),
   })
 }
+
+// ── Clean up ────────────────────────────────────────────────────────────────
+
+export async function getCleanupCandidates(days) {
+  return request(`${API}/cleanup/candidates?days=${encodeURIComponent(days)}`)
+}
+
+export async function cleanupTasks(taskIds) {
+  return request(`${API}/cleanup`, {
+    method: 'POST',
+    body: JSON.stringify({ taskIds }),
+  })
+}
