@@ -9,6 +9,7 @@ test-data/
 .env
 .env.local
 .env.*.local
+.feature-workflow.yml
 
 # Docs (README.md and CLAUDE.md kept; all other markdown excluded)
 *.md
