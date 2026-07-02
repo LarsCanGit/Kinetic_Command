@@ -182,6 +182,7 @@ describe('App', () => {
     await waitFor(() => expect(db.restoreData).toHaveBeenCalled(), { timeout: 3000 })
     await waitFor(() => expect(screen.getByText(/Restored .* projects and .* tasks/)).toBeInTheDocument(), { timeout: 3000 })
     expect(db.getTasksByProject).toHaveBeenCalledWith('proj-2')
+    expect(screen.getByTestId('fab-new-task')).toBeInTheDocument()
   })
 
   it('cleans up tasks and removes them from state with a toast', async () => {
