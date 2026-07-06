@@ -25,6 +25,13 @@ npm run build && npm start        # port 7429, data in /data
 docker compose up -d              # same, containerized
 ```
 
+### Build tagging
+
+- Builds are tagged `kinetic-command:<git-sha-short>`, never `:latest`.
+- Working tree must be clean before building — `npm run docker:build` (runs `scripts/build.sh`) checks this and tags the image with the current short SHA.
+- Rollback: `TAG=<old-sha> docker compose up -d` reuses the already-built local image, no rebuild needed.
+- No registry or image retention policy yet — this is single-host, local Docker image cache only. Revisit if a registry or staging environment gets added.
+
 ## Architecture
 
 - **Frontend:** React 18 + Vite, Tailwind CSS v3, @dnd-kit drag-and-drop
