@@ -32,6 +32,18 @@ docker compose up -d              # same, containerized
 - Rollback: `TAG=<old-sha> docker compose up -d` reuses the already-built local image, no rebuild needed.
 - No registry or image retention policy yet — this is single-host, local Docker image cache only. Revisit if a registry or staging environment gets added.
 
+### Pre-deploy staging
+
+Final smoke test of the real production image before shipping, not a replacement for `npm run dev` / `server:dev` (keep using those for day-to-day iteration with HMR):
+
+```bash
+npm run staging:up     # builds + runs kinetic-command:staging on port 7431, tmpfs data (ephemeral)
+npm run staging:logs   # tail container logs
+npm run staging:down   # stops and removes the container, no orphaned processes
+```
+
+Does not require a clean git tree (unlike `docker:build`) — this is for testing before commit. Data is tmpfs-backed so nothing persists between runs and there's nothing to manually clean up.
+
 ## Architecture
 
 - **Frontend:** React 18 + Vite, Tailwind CSS v3, @dnd-kit drag-and-drop
