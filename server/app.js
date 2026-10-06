@@ -3,6 +3,7 @@ import projectsRouter from './api/projects.js'
 import tasksRouter from './api/tasks.js'
 import restoreRouter from './api/restore.js'
 import cleanupRouter from './api/cleanup.js'
+import healthRouter from './api/health.js'
 
 export function createApp() {
   const app = express()
@@ -12,6 +13,7 @@ export function createApp() {
   app.use('/api/tasks', tasksRouter)
   app.use('/api/restore', restoreRouter)
   app.use('/api/cleanup', cleanupRouter)
+  app.use('/api/health', healthRouter)
 
   // Catch-all 404 for unknown API routes
   app.all('/api/*', (req, res) => {
