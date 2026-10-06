@@ -60,9 +60,9 @@ Key files:
 
 ## Data model
 
-Four fixed lanes: `backlog` /`todo` / `in_progress` / `done` — not configurable.
+Four fixed lanes: `backlog` / `todo` / `in_progress` / `done` — not configurable.
 
-Card fields: `title`, `description`, `dueDate`, `status`, `order` — no assignees, priority, or ticket IDs.
+Card fields: `title`, `description`, `dueDate`, `status`, `order`, `tags[]`, `priority` — no assignees or ticket IDs.
 
 ## Kanban MCP
 
