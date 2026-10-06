@@ -41,7 +41,7 @@ The recommended way to run in production.
 docker compose up -d
 ```
 
-This builds the image, starts the container, and persists data in a named Docker volume (`kanban-data`).
+This builds the image, starts the container, and persists data in a named Docker volume (`kanban-data`, which Compose names `kanban_kanban-data`).
 
 The app is served at **http://localhost:7429**.
 
@@ -74,6 +74,31 @@ To point to a host directory instead:
 volumes:
   - ./my-data:/data
 ```
+
+> **Do not change the compose project name.** [docker-compose.yml](docker-compose.yml) pins `name: kanban`, which makes the live volume `kanban_kanban-data`. Renaming the project (or the directory, if the pin is removed) points Compose at a different, empty volume and makes your data appear to vanish. The old volume is not deleted, so it can be recovered by restoring the previous name.
+
+### Build tagging and rollback
+
+Images are tagged with the current git short SHA, never `:latest`.
+
+```bash
+npm run docker:build              # builds kinetic-command:<short-sha>; refuses to run on a dirty working tree
+TAG=<short-sha> docker compose up -d   # deploy that build
+```
+
+To roll back, run the same `up -d` with an older tag; the image is already in the local cache, so nothing is rebuilt. In PowerShell, set the variable first: `$env:TAG = "<short-sha>"; docker compose up -d`.
+
+### Pre-deploy staging
+
+Smoke-test the real production image before shipping. Staging runs on port **7431** with an in-memory (`tmpfs`) data directory, so nothing persists and there is nothing to clean up. It does not require a clean git tree.
+
+```bash
+npm run staging:up     # build and run kinetic-command:staging on http://localhost:7431
+npm run staging:logs   # tail container logs
+npm run staging:down   # stop and remove the container
+```
+
+Keep using `npm run dev` / `npm run server:dev` for day-to-day work; staging is the final check, not a replacement.
 
 ### Useful Docker commands
 
@@ -258,8 +283,12 @@ test/                   — Vitest suites (see Testing)
   frontend/             — React component tests (Testing Library, jsdom)
     setup.js            — shared setup, loaded for all tests
 
+scripts/
+  build.sh              — tagged production image build (see Build tagging)
+
 Dockerfile              — multi-stage build (Node 20 Alpine)
-docker-compose.yml      — single-service compose config
+docker-compose.yml      — single-service compose config (pins project name `kanban`)
+docker-compose.staging.yml — pre-deploy staging on port 7431, tmpfs data
 ```
 
 ---
