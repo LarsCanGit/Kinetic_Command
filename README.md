@@ -123,8 +123,9 @@ The Express server exposes a JSON API under `/api`.
 | PUT | `/api/projects/:id` | Rename a project `{ name }` |
 | DELETE | `/api/projects/:id` | Delete a project and all its tasks |
 | GET | `/api/tasks` | List tasks — filters: `projectId`, `status`, `tag`, `priority`, `id`, `title` (case-insensitive substring), `limit` |
-| POST | `/api/tasks` | Create a task `{ projectId, title, description?, status?, dueDate?, tags?, priority? }` |
+| POST | `/api/tasks` | Create a task `{ projectId, title, description?, status?, dueDate?, tags?, priority? }` (404 if the project does not exist) |
 | PUT | `/api/tasks/:id` | Update a task |
+| PATCH | `/api/tasks/:id/move` | Move a task to another project `{ projectId }`; it lands at the end of its current lane (400 if `projectId` missing, 404 if task or project unknown) |
 | PATCH | `/api/tasks/bulk` | Bulk-update status + order (used by drag-and-drop) |
 | DELETE | `/api/tasks/:id` | Delete a task |
 | POST | `/api/restore` | Replace the whole database `{ projects, tasks }` (validated first; returns counts) |
@@ -188,6 +189,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 | `rename_project` | Rename an existing project (`id`, `name`) |
 | `get_tasks` | Get tasks with optional filters (see below) |
 | `create_task` | Create a task with title, description, status, dueDate, tags, priority |
+| `move_task` | Move a task to a different project (`id`, `projectId`); it lands at the end of its current lane in the destination |
 | `update_task` | Update any field on an existing task |
 
 #### `get_tasks` filters
@@ -218,7 +220,7 @@ npm run test:watch   # re-run on change
 
 | Suite | Location | What it covers |
 |---|---|---|
-| API | [test/api.test.js](test/api.test.js) | REST endpoints via supertest: projects, tasks (filters, tags, priority, bulk reorder), restore, cleanup, unknown routes |
+| API | [test/api.test.js](test/api.test.js) | REST endpoints via supertest: projects, tasks (filters, tags, priority, bulk reorder, move between projects), restore, cleanup, unknown routes |
 | Frontend | [test/frontend/](test/frontend/) | Component tests for `App`, `Board`, `CardModal`, `CleanupModal`, `RestoreConfirmModal` |
 
 Notes:

@@ -156,6 +156,99 @@ describe('POST /api/tasks', () => {
   })
 })
 
+describe('POST /api/tasks with unknown project', () => {
+  it('returns 404 when the project does not exist', async () => {
+    const res = await request(app).post('/api/tasks').send({ projectId: 'nope', title: 'Orphan' })
+    expect(res.status).toBe(404)
+    expect(res.body.error).toMatch(/project not found/i)
+  })
+})
+
+describe('PATCH /api/tasks/:id/move', () => {
+  async function setup() {
+    const src = await request(app).post('/api/projects').send({ name: 'Source' })
+    const dest = await request(app).post('/api/projects').send({ name: 'Dest' })
+    return { src: src.body.id, dest: dest.body.id }
+  }
+
+  it('moves a task to another project and preserves its other fields', async () => {
+    const { src, dest } = await setup()
+    const created = await request(app).post('/api/tasks').send({
+      projectId: src, title: 'Mover', description: 'Keep me', status: 'in_progress', tags: ['a'], priority: 'high',
+    })
+    const res = await request(app).patch(`/api/tasks/${created.body.id}/move`).send({ projectId: dest })
+    expect(res.status).toBe(200)
+    expect(res.body).toMatchObject({
+      id: created.body.id, projectId: dest, title: 'Mover', description: 'Keep me',
+      status: 'in_progress', tags: ['a'], priority: 'high',
+    })
+  })
+
+  it('places the task at the end of the same lane in the destination', async () => {
+    const { src, dest } = await setup()
+    await request(app).post('/api/tasks').send({ projectId: dest, title: 'D1', status: 'todo' })
+    await request(app).post('/api/tasks').send({ projectId: dest, title: 'D2', status: 'todo' })
+    await request(app).post('/api/tasks').send({ projectId: dest, title: 'Other lane', status: 'done' })
+    const created = await request(app).post('/api/tasks').send({ projectId: src, title: 'Mover', status: 'todo' })
+
+    const res = await request(app).patch(`/api/tasks/${created.body.id}/move`).send({ projectId: dest })
+    expect(res.body.status).toBe('todo')
+    expect(res.body.order).toBe(3)
+  })
+
+  it('gets order 1 when the destination lane is empty', async () => {
+    const { src, dest } = await setup()
+    const created = await request(app).post('/api/tasks').send({ projectId: src, title: 'Mover', status: 'backlog' })
+    const res = await request(app).patch(`/api/tasks/${created.body.id}/move`).send({ projectId: dest })
+    expect(res.body.order).toBe(1)
+  })
+
+  it('persists the move and removes the task from the source project', async () => {
+    const { src, dest } = await setup()
+    const created = await request(app).post('/api/tasks').send({ projectId: src, title: 'Mover' })
+    await request(app).patch(`/api/tasks/${created.body.id}/move`).send({ projectId: dest })
+
+    const srcTasks = await request(app).get(`/api/tasks?projectId=${src}`)
+    const destTasks = await request(app).get(`/api/tasks?projectId=${dest}`)
+    expect(srcTasks.body).toHaveLength(0)
+    expect(destTasks.body.map(t => t.id)).toEqual([created.body.id])
+  })
+
+  it('is a no-op when moving to the current project', async () => {
+    const { src } = await setup()
+    const created = await request(app).post('/api/tasks').send({ projectId: src, title: 'Stay' })
+    const res = await request(app).patch(`/api/tasks/${created.body.id}/move`).send({ projectId: src })
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual(created.body)
+  })
+
+  it('rejects a missing projectId', async () => {
+    const { src } = await setup()
+    const created = await request(app).post('/api/tasks').send({ projectId: src, title: 'T' })
+    const res = await request(app).patch(`/api/tasks/${created.body.id}/move`).send({})
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/projectId/i)
+  })
+
+  it('returns 404 for an unknown task', async () => {
+    const { dest } = await setup()
+    const res = await request(app).patch('/api/tasks/nope/move').send({ projectId: dest })
+    expect(res.status).toBe(404)
+    expect(res.body.error).toMatch(/task not found/i)
+  })
+
+  it('returns 404 for an unknown destination project and leaves the task unchanged', async () => {
+    const { src } = await setup()
+    const created = await request(app).post('/api/tasks').send({ projectId: src, title: 'T' })
+    const res = await request(app).patch(`/api/tasks/${created.body.id}/move`).send({ projectId: 'nope' })
+    expect(res.status).toBe(404)
+    expect(res.body.error).toMatch(/project not found/i)
+
+    const after = await request(app).get(`/api/tasks?id=${created.body.id}`)
+    expect(after.body[0].projectId).toBe(src)
+  })
+})
+
 describe('PUT /api/tasks/:id', () => {
   it('updates task fields', async () => {
     const project = await request(app).post('/api/projects').send({ name: 'P' })
