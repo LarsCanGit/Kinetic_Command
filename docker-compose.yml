@@ -1,4 +1,4 @@
-name: kineticcommand
+name: kanban
 
 services:
   kanban:
