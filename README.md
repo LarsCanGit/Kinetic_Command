@@ -100,6 +100,17 @@ npm run staging:down   # stop and remove the container
 
 Keep using `npm run dev` / `npm run server:dev` for day-to-day work; staging is the final check, not a replacement.
 
+### Health check
+
+The image defines a Docker `HEALTHCHECK` that calls `GET /api/health` every 30 seconds. The endpoint reads both data files, so it fails (503) if the data directory is missing or unreadable. `docker ps` shows `healthy` or `unhealthy` next to the container:
+
+```bash
+docker ps --filter name=kinetic-command
+curl http://localhost:7429/api/health
+```
+
+The response includes project and task counts. After a deploy, a count of `0` when you expect data is the signal that the container is pointed at the wrong (empty) volume; the check still reports `ok` in that case, since an empty board is valid.
+
 ### Useful Docker commands
 
 ```bash
@@ -143,6 +154,7 @@ The Express server exposes a JSON API under `/api`.
 
 | Method | Endpoint | Description |
 |---|---|---|
+| GET | `/api/health` | Health check: `{ status, projects, tasks }` (200), or 503 if the data directory is unreadable |
 | GET | `/api/projects` | List all projects |
 | POST | `/api/projects` | Create a project `{ name }` |
 | PUT | `/api/projects/:id` | Rename a project `{ name }` |
@@ -245,7 +257,7 @@ npm run test:watch   # re-run on change
 
 | Suite | Location | What it covers |
 |---|---|---|
-| API | [test/api.test.js](test/api.test.js) | REST endpoints via supertest: projects, tasks (filters, tags, priority, bulk reorder, move between projects), restore, cleanup, unknown routes |
+| API | [test/api.test.js](test/api.test.js) | REST endpoints via supertest: health, projects, tasks (filters, tags, priority, bulk reorder, move between projects), restore, cleanup, unknown routes |
 | Frontend | [test/frontend/](test/frontend/) | Component tests for `App`, `Board`, `CardModal`, `CleanupModal`, `RestoreConfirmModal` |
 
 Notes:
@@ -273,7 +285,7 @@ server/                 — Express backend
   server.js             — HTTP server, static file serving
   app.js                — Express app, route registration
   fileStorage.js        — JSON file read/write (projects + tasks)
-  api/                  — route handlers
+  api/                  — route handlers (projects, tasks, restore, cleanup, health)
 
 mcp/
   server.js             — MCP server (stdio transport)

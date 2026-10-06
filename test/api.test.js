@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import request from 'supertest'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { createApp } from '../server/app.js'
@@ -549,6 +549,35 @@ describe('PUT /api/tasks/:id — tags and priority', () => {
     expect(res.status).toBe(200)
     expect(res.body.tags).toEqual(['keep'])
     expect(res.body.priority).toBe('high')
+  })
+})
+
+// ── Health ──────────────────────────────────────────────────────────────────
+
+describe('GET /api/health', () => {
+  it('reports ok with zero counts on an empty data directory', async () => {
+    const res = await request(app).get('/api/health')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ status: 'ok', projects: 0, tasks: 0 })
+  })
+
+  it('reports project and task counts', async () => {
+    const project = await request(app).post('/api/projects').send({ name: 'P' })
+    await request(app).post('/api/tasks').send({ projectId: project.body.id, title: 'T1' })
+    await request(app).post('/api/tasks').send({ projectId: project.body.id, title: 'T2' })
+
+    const res = await request(app).get('/api/health')
+    expect(res.body).toEqual({ status: 'ok', projects: 1, tasks: 2 })
+  })
+
+  it('returns 503 when the data directory is unusable', async () => {
+    const blocker = join(tempDir, 'not-a-directory')
+    await writeFile(blocker, 'x')
+    process.env.DATA_PATH = join(blocker, 'data')
+
+    const res = await request(app).get('/api/health')
+    expect(res.status).toBe(503)
+    expect(res.body.status).toBe('error')
   })
 })
 
