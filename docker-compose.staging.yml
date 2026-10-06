@@ -1,0 +1,12 @@
+services:
+  kanban-staging:
+    image: kinetic-command:staging
+    build: .
+    container_name: kinetic-command-staging
+    ports:
+      - "7431:7429"
+    tmpfs:
+      - /data
+    environment:
+      - NODE_ENV=production
+      - DATA_PATH=/data

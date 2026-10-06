@@ -120,11 +120,17 @@ The Express server exposes a JSON API under `/api`.
 |---|---|---|
 | GET | `/api/projects` | List all projects |
 | POST | `/api/projects` | Create a project `{ name }` |
-| GET | `/api/tasks` | List tasks — filters: `projectId`, `status`, `tag`, `priority`, `limit` |
-| POST | `/api/tasks` | Create a task `{ projectId, title, description?, status?, dueDate?, tags?, priority? }` |
+| PUT | `/api/projects/:id` | Rename a project `{ name }` |
+| DELETE | `/api/projects/:id` | Delete a project and all its tasks |
+| GET | `/api/tasks` | List tasks — filters: `projectId`, `status`, `tag`, `priority`, `id`, `title` (case-insensitive substring), `limit` |
+| POST | `/api/tasks` | Create a task `{ projectId, title, description?, status?, dueDate?, tags?, priority? }` (404 if the project does not exist) |
 | PUT | `/api/tasks/:id` | Update a task |
+| PATCH | `/api/tasks/:id/move` | Move a task to another project `{ projectId }`; it lands at the end of its current lane (400 if `projectId` missing, 404 if task or project unknown) |
 | PATCH | `/api/tasks/bulk` | Bulk-update status + order (used by drag-and-drop) |
 | DELETE | `/api/tasks/:id` | Delete a task |
+| POST | `/api/restore` | Replace the whole database `{ projects, tasks }` (validated first; returns counts) |
+| GET | `/api/cleanup/candidates?days=N` | Preview old completed tasks and orphaned tasks (no changes made) |
+| POST | `/api/cleanup` | Delete tasks by id `{ taskIds }` |
 
 ---
 
@@ -180,8 +186,10 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 |---|---|
 | `list_projects` | List all projects |
 | `create_project` | Create a project by name |
+| `rename_project` | Rename an existing project (`id`, `name`) |
 | `get_tasks` | Get tasks with optional filters (see below) |
 | `create_task` | Create a task with title, description, status, dueDate, tags, priority |
+| `move_task` | Move a task to a different project (`id`, `projectId`); it lands at the end of its current lane in the destination |
 | `update_task` | Update any field on an existing task |
 
 #### `get_tasks` filters
@@ -192,10 +200,34 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 | `status` | string | `backlog` \| `todo` \| `in_progress` \| `done` |
 | `tag` | string | Filter by a single tag |
 | `priority` | string | `none` \| `low` \| `medium` \| `high` \| `critical` |
+| `id` | string | Filter by exact task ID |
+| `title` | string | Filter by title substring (case-insensitive) |
 | `limit` | number | Max results (applied after all filters) |
 | `include_done` | boolean | Include done tasks — **default: false** |
 
 Done tasks are excluded by default so Claude only sees actionable work.
+
+---
+
+## Testing
+
+Tests live in [test/](test/) and run on [Vitest](https://vitest.dev).
+
+```bash
+npm test             # run the full suite once
+npm run test:watch   # re-run on change
+```
+
+| Suite | Location | What it covers |
+|---|---|---|
+| API | [test/api.test.js](test/api.test.js) | REST endpoints via supertest: projects, tasks (filters, tags, priority, bulk reorder, move between projects), restore, cleanup, unknown routes |
+| Frontend | [test/frontend/](test/frontend/) | Component tests for `App`, `Board`, `CardModal`, `CleanupModal`, `RestoreConfirmModal` |
+
+Notes:
+
+- **Isolated data:** each API test creates a temp directory and points `DATA_PATH` at it, then deletes it afterwards. Tests never touch `dev-data/` or production data.
+- **Environments:** the default Vitest environment is `node`. Frontend test files opt in to jsdom with a `// @vitest-environment jsdom` docblock at the top of the file (see [vitest.config.js](vitest.config.js)).
+- **Not covered:** the MCP server ([mcp/server.js](mcp/server.js)) has no automated tests yet.
 
 ---
 
@@ -220,6 +252,11 @@ server/                 — Express backend
 
 mcp/
   server.js             — MCP server (stdio transport)
+
+test/                   — Vitest suites (see Testing)
+  api.test.js           — backend API tests (supertest)
+  frontend/             — React component tests (Testing Library, jsdom)
+    setup.js            — shared setup, loaded for all tests
 
 Dockerfile              — multi-stage build (Node 20 Alpine)
 docker-compose.yml      — single-service compose config

@@ -1,5 +1,8 @@
+name: kanban
+
 services:
   kanban:
+    image: kinetic-command:${TAG:-latest}
     build: .
     container_name: kinetic-command
     ports:

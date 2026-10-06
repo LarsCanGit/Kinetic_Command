@@ -11,7 +11,11 @@
     "server": "node server/server.js",
     "server:dev": "node --env-file=.env.development server/server.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "docker:build": "bash scripts/build.sh",
+    "staging:up": "docker compose -f docker-compose.staging.yml up -d --build",
+    "staging:down": "docker compose -f docker-compose.staging.yml down",
+    "staging:logs": "docker compose -f docker-compose.staging.yml logs -f"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

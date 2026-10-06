@@ -25,6 +25,25 @@ npm run build && npm start        # port 7429, data in /data
 docker compose up -d              # same, containerized
 ```
 
+### Build tagging
+
+- Builds are tagged `kinetic-command:<git-sha-short>`, never `:latest`.
+- Working tree must be clean before building — `npm run docker:build` (runs `scripts/build.sh`) checks this and tags the image with the current short SHA.
+- Rollback: `TAG=<old-sha> docker compose up -d` reuses the already-built local image, no rebuild needed.
+- No registry or image retention policy yet — this is single-host, local Docker image cache only. Revisit if a registry or staging environment gets added.
+
+### Pre-deploy staging
+
+Final smoke test of the real production image before shipping, not a replacement for `npm run dev` / `server:dev` (keep using those for day-to-day iteration with HMR):
+
+```bash
+npm run staging:up     # builds + runs kinetic-command:staging on port 7431, tmpfs data (ephemeral)
+npm run staging:logs   # tail container logs
+npm run staging:down   # stops and removes the container, no orphaned processes
+```
+
+Does not require a clean git tree (unlike `docker:build`) — this is for testing before commit. Data is tmpfs-backed so nothing persists between runs and there's nothing to manually clean up.
+
 ## Architecture
 
 - **Frontend:** React 18 + Vite, Tailwind CSS v3, @dnd-kit drag-and-drop
@@ -44,6 +63,12 @@ Key files:
 Three fixed lanes: `todo` / `in_progress` / `done` — not configurable.
 
 Card fields: `title`, `description`, `dueDate`, `status`, `order` — no assignees, priority, or ticket IDs.
+
+## Kanban MCP
+
+When the user mentions "kanban", "kanban board", or "tasks", always use the **kanban MCP server** (`mcp__kanban__*` tools) — never read the flat JSON files directly.
+
+- **Kinetic Command project ID:** `07b72523-6290-45e9-ada1-fb7500d9ad30`
 
 ## What NOT to commit
 
